@@ -53,7 +53,7 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var IMAGE_SRC = "https://farm4.staticflickr.com/3822/14295903724_630f4653cc_b.jpg";
-	var N = 3;
+	var N = 2;
 
 	function countInversions(array) {
 	  var totalInversions = 0;
@@ -73,15 +73,20 @@
 	  return totalInversions;
 	}
 
-	function createBoard(n) {
-	  var matrix = [];
-	  for (var i = 0; i < n; i++) {
-	    matrix[i] = [];
-	    for (var j = 0; j < n; j++) {
-	      matrix[i][j] = undefined;
+	// Returns row number of blank space (starting with 1)
+	function rowWithBlankFromBottom(matrix) {
+	  var lastRow = matrix.length;
+	  for (var i = lastRow - 1; i >= 0; i--) {
+	    // look for 0 in this row
+	    for (var j = 0; j < matrix[i].length; j++) {
+	      if (matrix[i][j] == 0) {
+	        return i + 1; // +1 because we don't want 0 based indicies
+	      }
 	    }
 	  }
+	}
 
+	function createBoard(n) {
 	  // 0 is blank space
 	  var numPieces = n * n;
 	  var pieces = [];
@@ -90,45 +95,50 @@
 	  }
 
 	  console.log(pieces);
+	  var shuffle = _lodash2.default.shuffle(pieces);
+	  var inversions = countInversions(shuffle);
+	  var matrix = arrayToMatrix(shuffle, n);
+	  console.log(shuffle);
+	  console.log(inversions);
 
 	  if (n % 2 == 0) {
 	    // If the grid width is even, and the blank is on an even row counting from the bottom
 	    // (second-last, fourth-last etc), then the number of inversions in a solvable situation is odd.
 	    // If the grid width is even, and the blank is on an odd row counting from the bottom
 	    // (last, third-last, fifth-last etc) then the number of inversions in a solvable situation is even.
-
-	  } else {
-	      // If the grid width is odd, then the number of inversions in a solvable situation is even.
-	      var shuffle = _lodash2.default.shuffle(pieces);
-	      var inversions = countInversions(shuffle);
-	      console.log(shuffle);
-	      console.log(inversions);
-	      while (inversions % 2 != 0) {
-	        shuffle = _lodash2.default.shuffle(pieces);
-	        inversions = countInversions(shuffle);
-	      }
-	      console.log("final puzzle: ", shuffle);
-	      return shuffle;
-
-	      // fill pieces in matrix
-	      var i = 0;
-	      var j = 0;
-	      while (!_lodash2.default.isEmpty(shuffle)) {
-	        var piece = _lodash2.default.first(shuffle);
-
-	        matrix[i][j] = piece;
-
-	        if (j == n - 1) {
-	          j = 0;
-	          i += 1;
+	    var acceptable = false;
+	    while (acceptable == false) {
+	      var rowWithBlank = rowWithBlankFromBottom(matrix);
+	      if (rowWithBlank % 2 == 0) {
+	        // even row
+	        if (inversions % 2 != 0) {
+	          // if inversions is odd
+	          acceptable = true;
 	        } else {
-	          j += 1;
+	          shuffle = _lodash2.default.shuffle(pieces);
+	          inversions = countInversions(shuffle);
 	        }
-
-	        shuffle = _lodash2.default.rest(shuffle);
+	      } else {
+	        // odd row
+	        if (inversions % 2 == 0) {
+	          // if inversions is even
+	          acceptable = true;
+	        } else {
+	          shuffle = _lodash2.default.shuffle(pieces);
+	          inversions = countInversions(shuffle);
+	        }
 	      }
-	      console.log(matrix);
 	    }
+	  } else {
+	    // If the grid width is odd, then the number of inversions in a solvable situation is even.
+	    while (inversions % 2 != 0) {
+	      shuffle = _lodash2.default.shuffle(pieces);
+	      inversions = countInversions(shuffle);
+	    }
+	  }
+
+	  console.log("final puzzle: ", shuffle);
+	  return shuffle;
 	}
 
 	var img = new Image();
@@ -138,10 +148,7 @@
 	var imageHeight = undefined;
 	var imageWidth = undefined;
 	var board = undefined;
-
-	var animate = {
-	  performing: false
-	};
+	var totalMoves = 0;
 
 	function calcSX(tileId, n, tileWidth) {
 	  return tileId % n * tileWidth;
@@ -149,6 +156,25 @@
 
 	function calcSY(tileId, n, tileHeight) {
 	  return Math.floor(tileId / n) * tileHeight;
+	}
+
+	function incTotalMoves() {
+	  totalMoves = totalMoves + 1;
+	  console.log(totalMoves);
+	}
+
+	function isSolved() {
+	  // Optimize this
+	  var numPieces = n * n;
+	  var pieces = [];
+	  for (var _i = 0; _i < numPieces; _i++) {
+	    pieces.push(_i);
+	  }
+
+	  for (var i = 0; i < board.length; ++i) {
+	    if (board[i] !== pieces[i]) return false;
+	  }
+	  return true;
 	}
 
 	function drawTile(tileId, x, y, ctx, img, tileWidth, tileHeight, n) {
@@ -191,22 +217,18 @@
 	}
 
 	function draw() {
-	  if (animate.performing == true) {
-	    console.log("animating");
-	    animateMove(animate);
-	    window.requestAnimationFrame(draw);
-	  } else {
-	    drawBoard(img, imageHeight, imageWidth, n);
-	  }
+	  drawBoard(img, imageHeight, imageWidth, n);
 	}
 
-	function animateMove(animate) {}
-
 	function drawBoard(img, totalHeight, totalWidth, n) {
-	  console.log("drawing");
 	  var ctx = canvas.getContext("2d");
 	  var tileHeight = totalHeight / n;
 	  var tileWidth = totalWidth / n;
+
+	  if (isSolved(board)) {
+	    console.log("SOLVED");
+	  }
+
 	  var matrix = arrayToMatrix(board, n);
 
 	  for (var i = 0; i < n; i++) {
@@ -225,12 +247,14 @@
 
 	    var newX = null;
 	    var newY = null;
+	    var moved = false;
 
 	    // LEFT
 	    if (x - 1 >= 0 && x - 1 < n && matrix[y][x - 1] == 0) {
 	      console.log("moving left");
 	      newX = x - 1;
 	      newY = y;
+	      moved = true;
 	    }
 
 	    // RIGHT
@@ -238,6 +262,7 @@
 	      console.log("moving right");
 	      newX = x + 1;
 	      newY = y;
+	      moved = true;
 	    }
 
 	    // UP
@@ -245,6 +270,7 @@
 	      console.log("moving up");
 	      newX = x;
 	      newY = y - 1;
+	      moved = true;
 	    }
 
 	    // DOWN
@@ -252,18 +278,16 @@
 	      console.log("moving down");
 	      newX = x;
 	      newY = y + 1;
+	      moved = true;
 	    }
 
-	    matrix[newY][newX] = matrix[y][x];
-	    matrix[y][x] = 0;
-	    board = matrixToArray(matrix, n);
-	    animate = {
-	      performing: true,
-	      x: x,
-	      y: y,
-	      toX: newX,
-	      toY: newY
-	    };
+	    // valid move occured
+	    if (newY != null || newX != null) {
+	      matrix[newY][newX] = matrix[y][x];
+	      matrix[y][x] = 0;
+	      board = matrixToArray(matrix, n);
+	      incTotalMoves();
+	    }
 
 	    window.requestAnimationFrame(draw);
 	  };
