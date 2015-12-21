@@ -44,49 +44,24 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	"use strict";
+	'use strict';
 
 	var _lodash = __webpack_require__(1);
 
 	var _lodash2 = _interopRequireDefault(_lodash);
+
+	var _helper = __webpack_require__(3);
+
+	var _test = __webpack_require__(4);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var IMAGE_SRC = "https://farm4.staticflickr.com/3822/14295903724_630f4653cc_b.jpg";
 	var N = 2;
 
-	function countInversions(array) {
-	  var totalInversions = 0;
-	  for (var i = 0; i < array.length; i++) {
-	    var num = array[i];
-	    var inversions = 0;
-
-	    if (num != 0) {
-	      for (var j = i + 1; j < array.length; j++) {
-	        if (num > array[j] && array[j] != 0) {
-	          inversions += 1;
-	        }
-	      }
-	    }
-	    totalInversions = totalInversions + inversions;
-	  }
-	  return totalInversions;
-	}
-
-	// Returns row number of blank space (starting with 1)
-	function rowWithBlankFromBottom(matrix) {
-	  var lastRow = matrix.length;
-	  for (var i = lastRow - 1; i >= 0; i--) {
-	    // look for 0 in this row
-	    for (var j = 0; j < matrix[i].length; j++) {
-	      if (matrix[i][j] == 0) {
-	        return i + 1; // +1 because we don't want 0 based indicies
-	      }
-	    }
-	  }
-	}
-
 	function createBoard(n) {
+	  (0, _test.test)();
+
 	  // 0 is blank space
 	  var numPieces = n * n;
 	  var pieces = [];
@@ -94,21 +69,29 @@
 	    pieces.push(i);
 	  }
 
-	  console.log(pieces);
 	  var shuffle = _lodash2.default.shuffle(pieces);
-	  var inversions = countInversions(shuffle);
-	  var matrix = arrayToMatrix(shuffle, n);
-	  console.log(shuffle);
-	  console.log(inversions);
+	  var inversions = (0, _helper.countInversions)(shuffle);
 
-	  if (n % 2 == 0) {
+	  // don't allow puzzles with no inversions
+	  while (inversions === 0) {
+	    shuffle = _lodash2.default.shuffle(pieces);
+	    inversions = (0, _helper.countInversions)(shuffle);
+	  }
+
+	  var matrix = arrayToMatrix(shuffle, n);
+
+	  if (n % 2 === 0) {
 	    // If the grid width is even, and the blank is on an even row counting from the bottom
 	    // (second-last, fourth-last etc), then the number of inversions in a solvable situation is odd.
 	    // If the grid width is even, and the blank is on an odd row counting from the bottom
 	    // (last, third-last, fifth-last etc) then the number of inversions in a solvable situation is even.
 	    var acceptable = false;
 	    while (acceptable == false) {
-	      var rowWithBlank = rowWithBlankFromBottom(matrix);
+	      console.log("shuffle:", shuffle);
+	      console.log("inversions:", inversions);
+
+	      var rowWithBlank = (0, _helper.rowWithBlankFromBottom)(matrix);
+	      console.log("rowWithBlank", rowWithBlank);
 	      if (rowWithBlank % 2 == 0) {
 	        // even row
 	        if (inversions % 2 != 0) {
@@ -116,7 +99,8 @@
 	          acceptable = true;
 	        } else {
 	          shuffle = _lodash2.default.shuffle(pieces);
-	          inversions = countInversions(shuffle);
+	          inversions = (0, _helper.countInversions)(shuffle);
+	          console.log("resuffling");
 	        }
 	      } else {
 	        // odd row
@@ -125,7 +109,8 @@
 	          acceptable = true;
 	        } else {
 	          shuffle = _lodash2.default.shuffle(pieces);
-	          inversions = countInversions(shuffle);
+	          inversions = (0, _helper.countInversions)(shuffle);
+	          console.log("resuffling");
 	        }
 	      }
 	    }
@@ -133,7 +118,7 @@
 	    // If the grid width is odd, then the number of inversions in a solvable situation is even.
 	    while (inversions % 2 != 0) {
 	      shuffle = _lodash2.default.shuffle(pieces);
-	      inversions = countInversions(shuffle);
+	      inversions = (0, _helper.countInversions)(shuffle);
 	    }
 	  }
 
@@ -161,20 +146,6 @@
 	function incTotalMoves() {
 	  totalMoves = totalMoves + 1;
 	  console.log(totalMoves);
-	}
-
-	function isSolved() {
-	  // Optimize this
-	  var numPieces = n * n;
-	  var pieces = [];
-	  for (var _i = 0; _i < numPieces; _i++) {
-	    pieces.push(_i);
-	  }
-
-	  for (var i = 0; i < board.length; ++i) {
-	    if (board[i] !== pieces[i]) return false;
-	  }
-	  return true;
 	}
 
 	function drawTile(tileId, x, y, ctx, img, tileWidth, tileHeight, n) {
@@ -225,7 +196,7 @@
 	  var tileHeight = totalHeight / n;
 	  var tileWidth = totalWidth / n;
 
-	  if (isSolved(board)) {
+	  if ((0, _helper.isSolved)(board, n * n)) {
 	    console.log("SOLVED");
 	  }
 
@@ -12676,6 +12647,132 @@
 		return module;
 	}
 
+
+/***/ },
+/* 3 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.countInversions = countInversions;
+	exports.rowWithBlankFromBottom = rowWithBlankFromBottom;
+	exports.isSolved = isSolved;
+	function countInversions(array) {
+	  var totalInversions = 0;
+	  for (var i = 0; i < array.length; i++) {
+	    var num = array[i];
+	    var inversions = 0;
+
+	    if (num != 0) {
+	      for (var j = i + 1; j < array.length; j++) {
+	        if (num > array[j] && array[j] != 0) {
+	          inversions += 1;
+	        }
+	      }
+	    }
+	    totalInversions = totalInversions + inversions;
+	  }
+	  return totalInversions;
+	}
+
+	// Returns row number of blank space (starting with 1)
+	function rowWithBlankFromBottom(matrix) {
+	  var lastRow = matrix.length;
+	  for (var i = lastRow - 1; i >= 0; i--) {
+	    // look for 0 in this row
+	    for (var j = 0; j < matrix[i].length; j++) {
+	      if (matrix[i][j] == 0) {
+	        return matrix.length - i;
+	      }
+	    }
+	  }
+	}
+
+	// Takes board array and determines if in solved state
+	function isSolved(boardArray, totalTiles) {
+	  for (var i = 0; i < totalTiles; i++) {
+	    if (boardArray[i] != i) {
+	      return false;
+	    }
+	  }
+	  return true;
+	}
+
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.test = test;
+
+	var _helper = __webpack_require__(3);
+
+	function testRowWithBlankFromBottom() {
+	  console.log("TEST - row with blank from botom");
+	  var matrix1 = [[0, 1], [2, 3]];
+	  var r1 = (0, _helper.rowWithBlankFromBottom)(matrix1);
+	  var matrix2 = [[1, 2], [0, 5]];
+	  var r2 = (0, _helper.rowWithBlankFromBottom)(matrix2);
+
+	  var matrix3 = [[1, 0], [2, 3]];
+	  var r3 = (0, _helper.rowWithBlankFromBottom)(matrix3);
+	  console.log("r1 -> ", r1); // should be 2
+	  console.log("r2 -> ", r2); // should be 1
+	  console.log("r3 -> ", r3); // should be 2
+	}
+
+	function inversionsTest() {
+	  console.log("TEST - countInversions");
+	  var one = [2, 3, 0, 1];
+	  var r1 = (0, _helper.countInversions)(one);
+	  if (r1 !== 2) {
+	    throw "Should be 2!";
+	  }
+	  var two = [0, 1, 2, 3];
+	  var r2 = (0, _helper.countInversions)(two);
+	  if (r2 !== 0) {
+	    throw "should be 0!";
+	  }
+
+	  var three = [12, 1, 10, 2, 7, 11, 4, 14, 5, 0, 9, 15, 8, 13, 6, 3];
+	  var r3 = (0, _helper.countInversions)(three);
+	  if (r3 !== 49) {
+	    throw "should be 49!";
+	  }
+	}
+
+	function isSolvedTest() {
+	  console.log("TEST - isSolved");
+	  var t1 = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+	  var r1 = (0, _helper.isSolved)(t1, 9);
+	  if (r1 !== true) {
+	    throw "Should be true";
+	  }
+	  var t2 = [2, 1, 0, 3, 4, 5, 6, 7, 8];
+	  var r2 = (0, _helper.isSolved)(t2, 9);
+	  if (r2 === true) {
+	    throw "Should be false";
+	  }
+
+	  var t3 = [0, 1, 2, 3];
+	  var r3 = (0, _helper.isSolved)(t3, 4);
+	  if (r3 !== true) {
+	    throw "Should be true";
+	  }
+	}
+
+	function test() {
+	  inversionsTest();
+	  testRowWithBlankFromBottom();
+	  isSolvedTest();
+	}
 
 /***/ }
 /******/ ]);

@@ -1,40 +1,20 @@
 import _ from 'lodash';
+import {
+  countInversions,
+  rowWithBlankFromBottom,
+  isSolved
+} from './helper';
+
+import {
+  test
+} from './test';
 
 const IMAGE_SRC = "https://farm4.staticflickr.com/3822/14295903724_630f4653cc_b.jpg";
 const N = 2;
 
-function countInversions(array) {
-  let totalInversions = 0;
-  for (let i = 0; i < array.length; i++) {
-    const num = array[i];
-    let inversions = 0;
-
-    if (num != 0) {
-      for (let j = i + 1; j < array.length; j++) {
-        if (num > array[j] && array[j] != 0) {
-          inversions += 1;
-        }
-      }
-    }
-    totalInversions = totalInversions + inversions;
-  }
-  return totalInversions;
-}
-
-// Returns row number of blank space (starting with 1)
-function rowWithBlankFromBottom(matrix) {
-  const lastRow = matrix.length;
-  for (let i = lastRow - 1; i >= 0; i--) {
-    // look for 0 in this row
-    for (let j = 0; j < matrix[i].length; j++) {
-      if (matrix[i][j] == 0) {
-        return i + 1; // +1 because we don't want 0 based indicies
-      }
-    }
-  }
-}
-
 function createBoard(n) {
+  test();
+
   // 0 is blank space
   const numPieces = n * n;
   let pieces = [];
@@ -42,21 +22,29 @@ function createBoard(n) {
     pieces.push(i);
   }
 
-  console.log(pieces);
   let shuffle = _.shuffle(pieces);
   let inversions = countInversions(shuffle);
-  let matrix = arrayToMatrix(shuffle, n);
-  console.log(shuffle);
-  console.log(inversions);
 
-  if (n % 2 == 0) {
+  // don't allow puzzles with no inversions
+  while (inversions === 0) {
+    shuffle = _.shuffle(pieces);
+    inversions = countInversions(shuffle);
+  }
+
+  let matrix = arrayToMatrix(shuffle, n);
+
+  if (n % 2 === 0) {
     // If the grid width is even, and the blank is on an even row counting from the bottom 
     // (second-last, fourth-last etc), then the number of inversions in a solvable situation is odd.
     // If the grid width is even, and the blank is on an odd row counting from the bottom 
     // (last, third-last, fifth-last etc) then the number of inversions in a solvable situation is even.
     let acceptable = false;
     while (acceptable == false) {
+      console.log("shuffle:", shuffle);
+      console.log("inversions:", inversions);
+
       const rowWithBlank = rowWithBlankFromBottom(matrix);
+      console.log("rowWithBlank", rowWithBlank);
       if (rowWithBlank % 2 == 0) {
         // even row
         if (inversions % 2 != 0) {
@@ -65,6 +53,7 @@ function createBoard(n) {
         } else {
           shuffle = _.shuffle(pieces);
           inversions = countInversions(shuffle);
+          console.log("resuffling")
         }
       } else {
         // odd row
@@ -74,6 +63,7 @@ function createBoard(n) {
         } else {
           shuffle = _.shuffle(pieces);
           inversions = countInversions(shuffle);
+          console.log("resuffling")
         }
       }
     }
@@ -111,19 +101,6 @@ function incTotalMoves() {
   console.log(totalMoves);
 }
 
-function isSolved() {
-  // Optimize this
-  const numPieces = n * n;
-  let pieces = [];
-  for (let i = 0; i < numPieces; i++) {
-    pieces.push(i);
-  }
-
-  for (var i = 0; i < board.length; ++i) {
-    if (board[i] !== pieces[i]) return false;
-  }
-  return true;
-}
 
 function drawTile(tileId, x, y, ctx, img, tileWidth, tileHeight, n) {
   const sliceX = calcSX(tileId, n, tileWidth);
@@ -173,7 +150,7 @@ function drawBoard(img, totalHeight, totalWidth, n) {
   const tileHeight = totalHeight / n;
   const tileWidth = totalWidth / n;
 
-  if(isSolved(board)) {
+  if(isSolved(board, n * n)) {
     console.log("SOLVED");
   }
 
