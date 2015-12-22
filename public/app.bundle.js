@@ -56,12 +56,11 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var IMAGE_SRC = "https://farm4.staticflickr.com/3822/14295903724_630f4653cc_b.jpg";
-	var N = 2;
+	var IMAGE_SRC = "http://www.capture-the-moment.co.uk/tp/images/382.jpg";
+	var N = 3;
+	var MAX_SHUFFLES = 10;
 
 	function createBoard(n) {
-	  (0, _test.test)();
-
 	  // 0 is blank space
 	  var numPieces = n * n;
 	  var pieces = [];
@@ -188,23 +187,20 @@
 	}
 
 	function draw() {
-	  drawBoard(img, imageHeight, imageWidth, n);
+	  drawBoard(board, img, imageHeight, imageWidth, n);
 	}
 
-	function drawBoard(img, totalHeight, totalWidth, n) {
+	function drawBoard(board, img, totalHeight, totalWidth, n) {
 	  var ctx = canvas.getContext("2d");
 	  var tileHeight = totalHeight / n;
 	  var tileWidth = totalWidth / n;
 
-	  if ((0, _helper.isSolved)(board, n * n)) {
-	    console.log("SOLVED");
-	  }
-
-	  var matrix = arrayToMatrix(board, n);
-
+	  // if(isSolved(board, n * n)) {
+	  //   console.log("SOLVED");
+	  // }
 	  for (var i = 0; i < n; i++) {
 	    for (var j = 0; j < n; j++) {
-	      var tile = matrix[i][j];
+	      var tile = board.board[i][j];
 	      drawTile(tile, j, i, ctx, img, tileWidth, tileHeight, n);
 	    }
 	  }
@@ -213,64 +209,65 @@
 	    var x = Math.floor((e.clientX - canvas.getBoundingClientRect().left) / tileWidth);
 	    var y = Math.floor((e.clientY - canvas.getBoundingClientRect().top) / tileHeight);
 	    console.log(x, ":", y);
-	    console.log(matrix[y][x]);
 	    // move piece to 0 space
 
 	    var newX = null;
 	    var newY = null;
-	    var moved = false;
+	    var dir = null;
 
+	    var physicalBoard = board.board;
 	    // LEFT
-	    if (x - 1 >= 0 && x - 1 < n && matrix[y][x - 1] == 0) {
+	    if (x - 1 >= 0 && x - 1 < n && physicalBoard[y][x - 1] == 0) {
 	      console.log("moving left");
 	      newX = x - 1;
 	      newY = y;
-	      moved = true;
-	    }
-
-	    // RIGHT
-	    if (x + 1 < n && matrix[y][x + 1] == 0) {
+	      dir = "LEFT";
+	    } else if (x + 1 < n && physicalBoard[y][x + 1] == 0) {
 	      console.log("moving right");
 	      newX = x + 1;
 	      newY = y;
-	      moved = true;
-	    }
-
-	    // UP
-	    if (y - 1 >= 0 && matrix[y - 1][x] == 0) {
+	      dir = "RIGHT";
+	    } else if (y - 1 >= 0 && physicalBoard[y - 1][x] == 0) {
 	      console.log("moving up");
 	      newX = x;
 	      newY = y - 1;
-	      moved = true;
-	    }
-
-	    // DOWN
-	    if (y + 1 < n && matrix[y + 1][x] == 0) {
+	      dir = "UP";
+	    } else if (y + 1 < n && physicalBoard[y + 1][x] == 0) {
 	      console.log("moving down");
 	      newX = x;
 	      newY = y + 1;
-	      moved = true;
+	      dir = "DOWN";
+	    } else {
+	      console.log("no valid move");
 	    }
 
 	    // valid move occured
 	    if (newY != null || newX != null) {
-	      matrix[newY][newX] = matrix[y][x];
-	      matrix[y][x] = 0;
-	      board = matrixToArray(matrix, n);
-	      incTotalMoves();
+	      var slide = {
+	        coords: { x: x, y: y },
+	        dir: dir
+	      };
+
+	      board = (0, _helper.applySlide)(board, slide);
+	      console.log("Shuffle history: ", board.shuffleHistory);
+	      console.log("Player history: ", board.playerHistory);
 	    }
 
 	    window.requestAnimationFrame(draw);
 	  };
 	}
 
+	function solve(board) {}
+
 	img.onload = function (e) {
+	  (0, _test.test)();
 	  var image = e.target;
 	  imageHeight = image.height;
 	  imageWidth = image.width;
 	  canvas.width = imageWidth;
 	  canvas.height = imageHeight;
-	  board = createBoard(n);
+	  board = (0, _helper.createBoardV2)(n);
+	  board = (0, _helper.shuffleBoard)(board, MAX_SHUFFLES);
 	  window.requestAnimationFrame(draw);
 	};
 
@@ -12660,6 +12657,11 @@
 	exports.countInversions = countInversions;
 	exports.rowWithBlankFromBottom = rowWithBlankFromBottom;
 	exports.isSolved = isSolved;
+	exports.blankNeighbors = blankNeighbors;
+	exports.createBoardV2 = createBoardV2;
+	exports.applySlide = applySlide;
+	exports.inverseDirection = inverseDirection;
+	exports.shuffleBoard = shuffleBoard;
 	function countInversions(array) {
 	  var totalInversions = 0;
 	  for (var i = 0; i < array.length; i++) {
@@ -12699,6 +12701,180 @@
 	    }
 	  }
 	  return true;
+	}
+
+	function blankNeighbors(board) {
+	  var blankLoc = board.blankLoc;
+	  var neighbors = [];
+	  var maxY = board.board.length - 1;
+	  var maxX = board.board[0].length - 1; // assume all rows are equal
+	  if (blankLoc.x > 0) {
+	    // left is available
+	    neighbors.push({
+	      coords: {
+	        x: blankLoc.x - 1,
+	        y: blankLoc.y
+	      },
+	      relative: "LEFT"
+	    });
+	  }
+
+	  if (blankLoc.x < maxX) {
+	    // right is available
+	    neighbors.push({
+	      coords: {
+	        x: blankLoc.x + 1,
+	        y: blankLoc.y
+	      },
+	      relative: "RIGHT"
+	    });
+	  }
+
+	  if (blankLoc.y > 0) {
+	    // up is available
+	    neighbors.push({
+	      coords: {
+	        x: blankLoc.x,
+	        y: blankLoc.y - 1
+	      },
+	      relative: "UP"
+	    });
+	  }
+
+	  if (blankLoc.y < maxY) {
+	    // down is available
+	    neighbors.push({
+	      coords: {
+	        x: blankLoc.x,
+	        y: blankLoc.y + 1
+	      },
+	      relative: "DOWN"
+	    });
+	  }
+	  return neighbors;
+	}
+
+	function createBoardV2(n) {
+	  // create matrix
+	  var matrix = [];
+	  var id = 0;
+	  for (var i = 0; i < n; i++) {
+	    matrix[i] = [];
+	    for (var j = 0; j < n; j++) {
+	      matrix[i][j] = id;
+	      id += 1;
+	    }
+	  }
+
+	  return {
+	    board: matrix,
+	    blankLoc: {
+	      x: 0,
+	      y: 0
+	    },
+	    playerHistory: [],
+	    shuffleHistory: [],
+	    latestMove: function latestMove() {
+	      if (_.isEmpty(this.playerHistory)) {
+	        if (!_.isEmpty(this.shuffleHistory)) {
+	          return this.shuffleHistory[this.shuffleHistory.length - 1];
+	        } else {
+	          return null;
+	        }
+	      } else {
+	        return this.playerHistory[this.playerHistory.length - 1];
+	      }
+	    }
+	  };
+	}
+
+	// if shuffle is true, apply slide to shuffle history
+	function applySlide(board, slide, shuffle) {
+	  var coords = slide.coords;
+	  var fromX = coords.x;
+	  var fromY = coords.y;
+
+	  var toX = undefined;
+	  var toY = undefined;
+	  if (slide.dir === "UP") {
+	    toX = fromX;
+	    toY = fromY - 1;
+	  } else if (slide.dir === "DOWN") {
+	    toX = fromX;
+	    toY = fromY + 1;
+	  } else if (slide.dir === "LEFT") {
+	    toX = fromX - 1;
+	    toY = fromY;
+	  } else if (slide.dir === "RIGHT") {
+	    toX = fromX + 1;
+	    toY = fromY;
+	  } else {
+	    throw "Unkown slide direction: " + slide.dir;
+	  }
+
+	  if (board.board[toY][toX] !== 0) {
+	    throw "Trying to move piece to non blank piece";
+	  }
+
+	  board.board[toY][toX] = board.board[fromY][fromX];
+	  board.board[fromY][fromX] = 0;
+
+	  board.blankLoc = {
+	    x: fromX,
+	    y: fromY
+	  };
+
+	  if (shuffle === true) {
+	    board.shuffleHistory.push(slide);
+	  } else {
+	    board.playerHistory.push(slide);
+	  }
+
+	  return board;
+	}
+
+	function inverseDirection(dir) {
+	  if (dir === "UP") {
+	    return "DOWN";
+	  } else if (dir === "DOWN") {
+	    return "UP";
+	  } else if (dir === "LEFT") {
+	    return "RIGHT";
+	  } else if (dir === "RIGHT") {
+	    return "LEFT";
+	  } else {
+	    throw "UNKNOWN DIRECTION: " + dir;
+	  }
+	}
+
+	// Shuffles input board, and returns object containing history of shuffles and shuffled board
+	function shuffleBoard(board, maxShuffles) {
+	  var _loop = function _loop(currentShuffle) {
+	    // find neighbors of blank space
+	    var neighbors = blankNeighbors(board);
+	    var latestMove = board.latestMove();
+	    debugger;
+	    if (latestMove !== null) {
+	      // remove negating moves (i.e. where direction equals )
+	      neighbors = _.remove(neighbors, function (n) {
+	        return n.relative !== latestMove.dir;
+	      });
+	    }
+	    var neighborToMove = _.sample(neighbors);
+	    console.log("moving ", neighborToMove);
+	    var dir = inverseDirection(neighborToMove.relative); // reverse relative direction to get movement direction
+	    var slide = {
+	      coords: neighborToMove.coords,
+	      dir: dir
+	    };
+	    board = applySlide(board, slide, true); // true flag to append to shuffle history
+	  };
+
+	  for (var currentShuffle = 0; currentShuffle < maxShuffles; currentShuffle++) {
+	    _loop(currentShuffle);
+	  }
+
+	  return board;
 	}
 
 /***/ },
@@ -12768,10 +12944,37 @@
 	  }
 	}
 
+	function blankNeighborsTest() {
+	  console.log("TEST - blankNeighbors");
+	  var b1 = (0, _helper.createBoardV2)(3); // creates basic board
+	  var r1 = (0, _helper.blankNeighbors)(b1);
+	  console.log("r1 -> ", r1); // RIGHT and DOWN should be available
+	  var b2 = {
+	    board: [[1, 2, 3], [4, 0, 5], [6, 7, 8]],
+	    blankLoc: {
+	      x: 1,
+	      y: 1
+	    }
+	  };
+	  var r2 = (0, _helper.blankNeighbors)(b2);
+	  console.log("r2 -> ", r2);
+	}
+
+	function testShuffleAndReset() {
+	  console.log("TEST - shuffle and reset");
+	  var b1 = (0, _helper.createBoardV2)(3);
+	  var shuffle = (0, _helper.shuffleBoard)(b1, 10); // 10 shuffles
+	  if (shuffle.shuffleHistory.length !== 10) {
+	    throw "Should have 10 shuffles!";
+	  }
+	}
+
 	function test() {
 	  inversionsTest();
 	  testRowWithBlankFromBottom();
 	  isSolvedTest();
+	  blankNeighborsTest();
+	  testShuffleAndReset();
 	}
 
 /***/ }

@@ -2,19 +2,23 @@ import _ from 'lodash';
 import {
   countInversions,
   rowWithBlankFromBottom,
-  isSolved
+  isSolved,
+  blankNeighbors,
+  createBoardV2,
+  inverseDirection,
+  applySlide,
+  shuffleBoard
 } from './helper';
 
 import {
   test
 } from './test';
 
-const IMAGE_SRC = "https://farm4.staticflickr.com/3822/14295903724_630f4653cc_b.jpg";
-const N = 2;
+const IMAGE_SRC = "http://www.capture-the-moment.co.uk/tp/images/382.jpg";
+const N = 3;
+const MAX_SHUFFLES = 10;
 
 function createBoard(n) {
-  test();
-
   // 0 is blank space
   const numPieces = n * n;
   let pieces = [];
@@ -142,23 +146,20 @@ function matrixToArray(matrix, n) {
 }
 
 function draw() {
-  drawBoard(img, imageHeight, imageWidth, n);
+  drawBoard(board, img, imageHeight, imageWidth, n);
 }
 
-function drawBoard(img, totalHeight, totalWidth, n) {
+function drawBoard(board, img, totalHeight, totalWidth, n) {
   const ctx = canvas.getContext("2d");
   const tileHeight = totalHeight / n;
   const tileWidth = totalWidth / n;
 
-  if(isSolved(board, n * n)) {
-    console.log("SOLVED");
-  }
-
-  const matrix = arrayToMatrix(board, n);
-
+  // if(isSolved(board, n * n)) {
+  //   console.log("SOLVED");
+  // }
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < n; j++) {
-      const tile = matrix[i][j];
+      const tile = board.board[i][j];
       drawTile(tile, j, i, ctx, img, tileWidth, tileHeight, n);
     }
   }
@@ -167,63 +168,66 @@ function drawBoard(img, totalHeight, totalWidth, n) {
     const x = Math.floor((e.clientX - canvas.getBoundingClientRect().left) / tileWidth);
     const y = Math.floor((e.clientY - canvas.getBoundingClientRect().top) / tileHeight);
     console.log(x, ":", y);
-    console.log(matrix[y][x]);
     // move piece to 0 space
 
     let newX = null;
     let newY = null;
-    let moved = false;
+    let dir = null;
 
+    let physicalBoard = board.board;
     // LEFT
-    if (x - 1 >= 0 && x - 1 < n && matrix[y][x - 1] == 0) {
+    if (x - 1 >= 0 && x - 1 < n && physicalBoard[y][x - 1] == 0) {
       console.log("moving left");
       newX = x - 1;
       newY = y;
-      moved = true;
-    }
-
-    // RIGHT
-    if (x + 1 < n && matrix[y][x + 1] == 0) {
+      dir = "LEFT";
+    } else if (x + 1 < n && physicalBoard[y][x + 1] == 0) {
       console.log("moving right");
       newX = x + 1;
       newY = y;
-      moved = true;
-    }
-
-    // UP
-    if (y - 1 >= 0 && matrix[y - 1][x] == 0) {
+      dir = "RIGHT";
+    } else if (y - 1 >= 0 && physicalBoard[y - 1][x] == 0) {
       console.log("moving up");
       newX = x;
       newY = y - 1;
-      moved = true;
-    }
-
-    // DOWN
-    if (y + 1 < n && matrix[y+1][x] == 0) {
+      dir = "UP";
+    } else if (y + 1 < n && physicalBoard[y+1][x] == 0) {
       console.log("moving down");
       newX = x;
       newY = y + 1;
-      moved = true;
+      dir = "DOWN";
+    } else {
+      console.log("no valid move");
     }
 
     // valid move occured
     if (newY != null || newX != null) {
-      matrix[newY][newX] = matrix[y][x];
-      matrix[y][x] = 0;
-      board = matrixToArray(matrix, n);
-      incTotalMoves();
+      const slide = {
+        coords: {x, y},
+        dir: dir
+      }
+
+      board = applySlide(board, slide);
+      console.log("Shuffle history: ",  board.shuffleHistory);
+      console.log("Player history: ", board.playerHistory);
     }
 
     window.requestAnimationFrame(draw);
   }
 }
 
+function solve(board) {
+  
+}
+
 img.onload = (e) => {
+  test();
   const image = e.target;
   imageHeight = image.height;
   imageWidth = image.width;
   canvas.width = imageWidth;
   canvas.height = imageHeight;
-  board = createBoard(n);
+  board = createBoardV2(n);
+  board = shuffleBoard(board, MAX_SHUFFLES);
   window.requestAnimationFrame(draw);
 }

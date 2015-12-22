@@ -1,7 +1,10 @@
 import {
   countInversions,
   rowWithBlankFromBottom,
-  isSolved
+  isSolved,
+  blankNeighbors,
+  createBoardV2,
+  shuffleBoard
 } from './helper';
 
 function testRowWithBlankFromBottom() {
@@ -57,7 +60,33 @@ function isSolvedTest() {
   if (r3 !== true) {
     throw "Should be true";
   }
+}
 
+function blankNeighborsTest() {
+  console.log("TEST - blankNeighbors");
+  const b1 = createBoardV2(3); // creates basic board
+  const r1 = blankNeighbors(b1);
+  console.log("r1 -> ", r1); // RIGHT and DOWN should be available
+  const b2 = {
+    board: [[1, 2, 3],
+            [4, 0, 5],
+            [6, 7, 8]],
+    blankLoc: {
+      x: 1,
+      y: 1
+    }
+  };
+  const r2 = blankNeighbors(b2);
+  console.log("r2 -> ", r2);
+}
+
+function testShuffleAndReset() {
+  console.log("TEST - shuffle and reset");
+  const b1 = createBoardV2(3);
+  const shuffle = shuffleBoard(b1, 10); // 10 shuffles
+  if (shuffle.shuffleHistory.length !== 10) {
+    throw "Should have 10 shuffles!"
+  }
 }
 
 
@@ -65,4 +94,6 @@ export function test() {
   inversionsTest();
   testRowWithBlankFromBottom();
   isSolvedTest();
+  blankNeighborsTest();
+  testShuffleAndReset();
 }
