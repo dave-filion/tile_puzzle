@@ -12853,13 +12853,14 @@
 	    // find neighbors of blank space
 	    var neighbors = blankNeighbors(board);
 	    var latestMove = board.latestMove();
-	    debugger;
+
 	    if (latestMove !== null) {
-	      // remove negating moves (i.e. where direction equals )
-	      neighbors = _.remove(neighbors, function (n) {
+	      // filter out negating moves (i.e. where latestmove->dir === neighbor->relativeposition
+	      neighbors = _.filter(neighbors, function (n) {
 	        return n.relative !== latestMove.dir;
 	      });
 	    }
+
 	    var neighborToMove = _.sample(neighbors);
 	    console.log("moving ", neighborToMove);
 	    var dir = inverseDirection(neighborToMove.relative); // reverse relative direction to get movement direction

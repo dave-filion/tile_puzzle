@@ -190,11 +190,12 @@ export function shuffleBoard(board, maxShuffles) {
     // find neighbors of blank space
     let neighbors = blankNeighbors(board);
     const latestMove = board.latestMove();
-    debugger
+
     if (latestMove !== null) {
-      // remove negating moves (i.e. where direction equals )
-      neighbors = _.remove(neighbors, n => n.relative !== latestMove.dir);
+      // filter out negating moves (i.e. where latestmove->dir === neighbor->relativeposition
+      neighbors = _.filter(neighbors, n => n.relative !== latestMove.dir);
     }
+
     const neighborToMove = _.sample(neighbors);
     console.log("moving ", neighborToMove);
     const dir = inverseDirection(neighborToMove.relative); // reverse relative direction to get movement direction
