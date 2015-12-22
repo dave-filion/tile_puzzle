@@ -89,8 +89,16 @@ img.src = IMAGE_SRC;
 const canvas = document.getElementById("canvas");
 let imageHeight;
 let imageWidth;
+let tileHeight;
+let tileWidth;
 let board;
-let totalMoves = 0;
+let ctx;
+
+let animate = {
+  active: false,
+  lastCoords: null,
+  move: null
+}
 
 function calcSX(tileId, n, tileWidth) {
   return (tileId % n) * tileWidth;
@@ -100,25 +108,18 @@ function calcSY(tileId, n, tileHeight) {
   return Math.floor(tileId / n) * tileHeight;
 }
 
-function incTotalMoves() {
-  totalMoves = totalMoves + 1;
-  console.log(totalMoves);
-}
-
-
-function drawTile(tileId, x, y, ctx, img, tileWidth, tileHeight, n) {
+function drawTile(tileId, x, y, img, n) {
   const sliceX = calcSX(tileId, n, tileWidth);
   const sliceY =  calcSY(tileId, n, tileHeight);
   const sliceWidth = tileWidth;
   const sliceHeight = tileHeight;
   const dx = x * tileWidth;
   const dy = y * tileHeight;
-  const dWidth = tileWidth;
-  const dHeight = tileHeight;
+
   if (tileId != 0) {
-    ctx.drawImage(img, sliceX, sliceY, sliceWidth, sliceHeight, dx, dy, dWidth, dHeight);
+    ctx.drawImage(img, sliceX, sliceY, sliceWidth, sliceHeight, dx, dy, tileWidth, tileHeight);
   } else {
-    ctx.fillRect(dx, dy, dWidth, dHeight);
+    ctx.fillRect(dx, dy, tileWidth, tileHeight);
   }
 }
 
@@ -145,22 +146,89 @@ function matrixToArray(matrix, n) {
   return arr;
 }
 
-function draw() {
-  drawBoard(board, img, imageHeight, imageWidth, n);
+
+function animateMove() {
+  const move = animate.move;
+  let startX;
+  let startY;
+
+  if (animate.lastCoords == null) {
+    // init animation
+    startX = move.coords.x * tileWidth;
+    startY = move.coords.y * tileHeight;
+
+    if (move.dir === "UP") {
+      animate.finalCoords = {
+        x: startX,
+        y: (move.coords.y - 1) * tileHeight
+      }
+    } else if (move.dir === "DOWN") {
+      animate.finalCoords = {
+        x: startX,
+        y: (move.coords.y + 1) * tileHeight
+      }
+    } else if (move.dir === "LEFT") {
+      animate.finalCoords = {
+        x: (startX - 1) * tileWidth,
+        y: startY
+      }
+    } else if (move.dir === "RIGHT") {
+      animate.finalCoords = {
+        x: (startX + 1) * tileWidth,
+        y: startY
+      }
+    }
+  } else {
+    startX = animate.lastCoords.x;
+    startY = animate.lastCoords.y;
+  }
+
+  let newX = startX;
+  let newY = startY;
+  let finished;
+
+  if (move.dir === "UP") {
+    newY = startY - 5;
+  } else if (move.dir === "DOWN") {
+    newY = startY + 5;
+  } else if (move.dir === "LEFT") {
+    newX = startX - 5;
+  } else if (move.dir === "RIGHT") {
+    newX = startX + 5;
+  }
+
+  ctx.fillStyle="#FF0000";
+  ctx.fillRect(newX, newY, tileWidth, tileHeight);
+
+  animate.lastCoords = {
+    x: newX,
+    y: newY
+  };
+
+  if (animate.lastCoords.x)
+
+  console.log("lastCoord X-", animate.lastCoords.x);
+  console.log("lastCoord Y-", animate.lastCoords.y);
+  console.log("finalCoord X-", animate.finalCoords.x);
+  console.log("finalCoord Y-", animate.finalCoords.y);
+
 }
 
-function drawBoard(board, img, totalHeight, totalWidth, n) {
-  const ctx = canvas.getContext("2d");
-  const tileHeight = totalHeight / n;
-  const tileWidth = totalWidth / n;
+function draw() {
+  if (animate.active === true) {
+    // perform movement animation
+    animateMove();
+    window.requestAnimationFrame(draw);
+  } else {
+    drawBoard(board, img, n);
+  }
+}
 
-  // if(isSolved(board, n * n)) {
-  //   console.log("SOLVED");
-  // }
+function drawBoard(board, img, n) {
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < n; j++) {
       const tile = board.board[i][j];
-      drawTile(tile, j, i, ctx, img, tileWidth, tileHeight, n);
+      drawTile(tile, j, i, img, n);
     }
   }
 
@@ -208,16 +276,18 @@ function drawBoard(board, img, totalHeight, totalWidth, n) {
       }
 
       board = applySlide(board, slide);
-      console.log("Shuffle history: ",  board.shuffleHistory);
-      console.log("Player history: ", board.playerHistory);
-    }
+      animate = {
+        active: true,
+        move: board.latestMove()
+      };
 
-    window.requestAnimationFrame(draw);
+      window.requestAnimationFrame(draw);
+    }
   }
 }
 
 function solve(board) {
-  
+
 }
 
 img.onload = (e) => {
@@ -227,6 +297,10 @@ img.onload = (e) => {
   imageWidth = image.width;
   canvas.width = imageWidth;
   canvas.height = imageHeight;
+  tileHeight = imageHeight / n;
+  tileWidth = imageWidth / n;
+  ctx = canvas.getContext("2d");
+
   board = createBoardV2(n);
   board = shuffleBoard(board, MAX_SHUFFLES);
   window.requestAnimationFrame(draw);

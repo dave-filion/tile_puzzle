@@ -131,8 +131,16 @@
 	var canvas = document.getElementById("canvas");
 	var imageHeight = undefined;
 	var imageWidth = undefined;
+	var tileHeight = undefined;
+	var tileWidth = undefined;
 	var board = undefined;
-	var totalMoves = 0;
+	var ctx = undefined;
+
+	var animate = {
+	  active: false,
+	  lastCoords: null,
+	  move: null
+	};
 
 	function calcSX(tileId, n, tileWidth) {
 	  return tileId % n * tileWidth;
@@ -142,24 +150,18 @@
 	  return Math.floor(tileId / n) * tileHeight;
 	}
 
-	function incTotalMoves() {
-	  totalMoves = totalMoves + 1;
-	  console.log(totalMoves);
-	}
-
-	function drawTile(tileId, x, y, ctx, img, tileWidth, tileHeight, n) {
+	function drawTile(tileId, x, y, img, n) {
 	  var sliceX = calcSX(tileId, n, tileWidth);
 	  var sliceY = calcSY(tileId, n, tileHeight);
 	  var sliceWidth = tileWidth;
 	  var sliceHeight = tileHeight;
 	  var dx = x * tileWidth;
 	  var dy = y * tileHeight;
-	  var dWidth = tileWidth;
-	  var dHeight = tileHeight;
+
 	  if (tileId != 0) {
-	    ctx.drawImage(img, sliceX, sliceY, sliceWidth, sliceHeight, dx, dy, dWidth, dHeight);
+	    ctx.drawImage(img, sliceX, sliceY, sliceWidth, sliceHeight, dx, dy, tileWidth, tileHeight);
 	  } else {
-	    ctx.fillRect(dx, dy, dWidth, dHeight);
+	    ctx.fillRect(dx, dy, tileWidth, tileHeight);
 	  }
 	}
 
@@ -186,22 +188,85 @@
 	  return arr;
 	}
 
-	function draw() {
-	  drawBoard(board, img, imageHeight, imageWidth, n);
+	function animateMove() {
+	  var move = animate.move;
+	  var startX = undefined;
+	  var startY = undefined;
+
+	  if (animate.lastCoords == null) {
+	    // init animation
+	    startX = move.coords.x * tileWidth;
+	    startY = move.coords.y * tileHeight;
+
+	    if (move.dir === "UP") {
+	      animate.finalCoords = {
+	        x: startX,
+	        y: (move.coords.y - 1) * tileHeight
+	      };
+	    } else if (move.dir === "DOWN") {
+	      animate.finalCoords = {
+	        x: startX,
+	        y: (move.coords.y + 1) * tileHeight
+	      };
+	    } else if (move.dir === "LEFT") {
+	      animate.finalCoords = {
+	        x: (startX - 1) * tileWidth,
+	        y: startY
+	      };
+	    } else if (move.dir === "RIGHT") {
+	      animate.finalCoords = {
+	        x: (startX + 1) * tileWidth,
+	        y: startY
+	      };
+	    }
+	  } else {
+	    startX = animate.lastCoords.x;
+	    startY = animate.lastCoords.y;
+	  }
+
+	  var newX = startX;
+	  var newY = startY;
+	  var finished = undefined;
+
+	  if (move.dir === "UP") {
+	    newY = startY - 5;
+	  } else if (move.dir === "DOWN") {
+	    newY = startY + 5;
+	  } else if (move.dir === "LEFT") {
+	    newX = startX - 5;
+	  } else if (move.dir === "RIGHT") {
+	    newX = startX + 5;
+	  }
+
+	  ctx.fillStyle = "#FF0000";
+	  ctx.fillRect(newX, newY, tileWidth, tileHeight);
+
+	  animate.lastCoords = {
+	    x: newX,
+	    y: newY
+	  };
+
+	  if (animate.lastCoords.x) console.log("lastCoord X-", animate.lastCoords.x);
+	  console.log("lastCoord Y-", animate.lastCoords.y);
+	  console.log("finalCoord X-", animate.finalCoords.x);
+	  console.log("finalCoord Y-", animate.finalCoords.y);
 	}
 
-	function drawBoard(board, img, totalHeight, totalWidth, n) {
-	  var ctx = canvas.getContext("2d");
-	  var tileHeight = totalHeight / n;
-	  var tileWidth = totalWidth / n;
+	function draw() {
+	  if (animate.active === true) {
+	    // perform movement animation
+	    animateMove();
+	    window.requestAnimationFrame(draw);
+	  } else {
+	    drawBoard(board, img, n);
+	  }
+	}
 
-	  // if(isSolved(board, n * n)) {
-	  //   console.log("SOLVED");
-	  // }
+	function drawBoard(board, img, n) {
 	  for (var i = 0; i < n; i++) {
 	    for (var j = 0; j < n; j++) {
 	      var tile = board.board[i][j];
-	      drawTile(tile, j, i, ctx, img, tileWidth, tileHeight, n);
+	      drawTile(tile, j, i, img, n);
 	    }
 	  }
 
@@ -249,11 +314,13 @@
 	      };
 
 	      board = (0, _helper.applySlide)(board, slide);
-	      console.log("Shuffle history: ", board.shuffleHistory);
-	      console.log("Player history: ", board.playerHistory);
-	    }
+	      animate = {
+	        active: true,
+	        move: board.latestMove()
+	      };
 
-	    window.requestAnimationFrame(draw);
+	      window.requestAnimationFrame(draw);
+	    }
 	  };
 	}
 
@@ -266,6 +333,10 @@
 	  imageWidth = image.width;
 	  canvas.width = imageWidth;
 	  canvas.height = imageHeight;
+	  tileHeight = imageHeight / n;
+	  tileWidth = imageWidth / n;
+	  ctx = canvas.getContext("2d");
+
 	  board = (0, _helper.createBoardV2)(n);
 	  board = (0, _helper.shuffleBoard)(board, MAX_SHUFFLES);
 	  window.requestAnimationFrame(draw);
