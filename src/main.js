@@ -15,13 +15,12 @@ import {
   test
 } from './test';
 
-const IMAGE_SRC = "http://www.capture-the-moment.co.uk/tp/images/382.jpg";
-const N = 5;
+const DEFAULT_IMG = "http://www.capture-the-moment.co.uk/tp/images/382.jpg";
+const DEFAULT_N = 3;
 const MAX_SHUFFLES = 100;
 
-let img = new Image();
-let n = N;
-img.src = IMAGE_SRC;
+let n;
+let img;
 const canvas = document.getElementById("canvas");
 let imageHeight;
 let imageWidth;
@@ -141,7 +140,7 @@ function stopAnimation() {
 }
 
 function animateMove() {
-  const delta = 10;
+  const delta = 15;
   const move = animation.move;
 
   // draw blank space in starting position
@@ -295,25 +294,46 @@ function solve(board) {
   window.requestAnimationFrame(draw);
 }
 
-img.onload = (e) => {
-  test();
-  const image = e.target;
-  imageHeight = image.height;
-  imageWidth = image.width;
-  canvas.width = imageWidth;
-  canvas.height = imageHeight;
-  tileHeight = imageHeight / n;
-  tileWidth = imageWidth / n;
-  ctx = canvas.getContext("2d");
+// Onload
+document.getElementById("generateButton").onclick = (e) => {
+  e.preventDefault();
+  const userN = document.getElementById("nInput").value;
+  const userImg = document.getElementById("imgInput").value;
+  debugger;
+  if (_.isEmpty(userN)) {
+    n = DEFAULT_N;
+  } else {
+    n = parseInt(userN);
+  }
 
-  board = createBoardV2(n);
-  board = shuffleBoard(board, MAX_SHUFFLES);
+  img = new Image();
+  if (_.isEmpty(userImg)) {
+    img.src = DEFAULT_IMG;
+  } else {
+    img.src = userImg;
+  }
 
-  window.requestAnimationFrame(draw);
+  img.onload = (e) => {
+    test();
+    const image = e.target;
+    imageHeight = image.height;
+    imageWidth = image.width;
+    canvas.width = imageWidth;
+    canvas.height = imageHeight;
+    tileHeight = imageHeight / n;
+    tileWidth = imageWidth / n;
+    ctx = canvas.getContext("2d");
 
-  // bind solve button
-  document.getElementById("solveButton").onclick = () => {
-    console.log("solving!");
-    solve(board);
-  };
+    board = createBoardV2(n);
+    board = shuffleBoard(board, n * 20);
+
+    window.requestAnimationFrame(draw);
+
+    // bind solve button
+    document.getElementById("solveButton").onclick = () => {
+      console.log("solving!");
+      solve(board);
+    };
+  }
 }
+

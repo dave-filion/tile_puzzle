@@ -56,13 +56,12 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var IMAGE_SRC = "http://www.capture-the-moment.co.uk/tp/images/382.jpg";
-	var N = 5;
+	var DEFAULT_IMG = "http://www.capture-the-moment.co.uk/tp/images/382.jpg";
+	var DEFAULT_N = 3;
 	var MAX_SHUFFLES = 100;
 
-	var img = new Image();
-	var n = N;
-	img.src = IMAGE_SRC;
+	var n = undefined;
+	var img = undefined;
 	var canvas = document.getElementById("canvas");
 	var imageHeight = undefined;
 	var imageWidth = undefined;
@@ -182,7 +181,7 @@
 	}
 
 	function animateMove() {
-	  var delta = 10;
+	  var delta = 15;
 	  var move = animation.move;
 
 	  // draw blank space in starting position
@@ -335,26 +334,46 @@
 	  window.requestAnimationFrame(draw);
 	}
 
-	img.onload = function (e) {
-	  (0, _test.test)();
-	  var image = e.target;
-	  imageHeight = image.height;
-	  imageWidth = image.width;
-	  canvas.width = imageWidth;
-	  canvas.height = imageHeight;
-	  tileHeight = imageHeight / n;
-	  tileWidth = imageWidth / n;
-	  ctx = canvas.getContext("2d");
+	// Onload
+	document.getElementById("generateButton").onclick = function (e) {
+	  e.preventDefault();
+	  var userN = document.getElementById("nInput").value;
+	  var userImg = document.getElementById("imgInput").value;
+	  debugger;
+	  if (_lodash2.default.isEmpty(userN)) {
+	    n = DEFAULT_N;
+	  } else {
+	    n = parseInt(userN);
+	  }
 
-	  board = (0, _helper.createBoardV2)(n);
-	  board = (0, _helper.shuffleBoard)(board, MAX_SHUFFLES);
+	  img = new Image();
+	  if (_lodash2.default.isEmpty(userImg)) {
+	    img.src = DEFAULT_IMG;
+	  } else {
+	    img.src = userImg;
+	  }
 
-	  window.requestAnimationFrame(draw);
+	  img.onload = function (e) {
+	    (0, _test.test)();
+	    var image = e.target;
+	    imageHeight = image.height;
+	    imageWidth = image.width;
+	    canvas.width = imageWidth;
+	    canvas.height = imageHeight;
+	    tileHeight = imageHeight / n;
+	    tileWidth = imageWidth / n;
+	    ctx = canvas.getContext("2d");
 
-	  // bind solve button
-	  document.getElementById("solveButton").onclick = function () {
-	    console.log("solving!");
-	    solve(board);
+	    board = (0, _helper.createBoardV2)(n);
+	    board = (0, _helper.shuffleBoard)(board, n * 20);
+
+	    window.requestAnimationFrame(draw);
+
+	    // bind solve button
+	    document.getElementById("solveButton").onclick = function () {
+	      console.log("solving!");
+	      solve(board);
+	    };
 	  };
 	};
 
