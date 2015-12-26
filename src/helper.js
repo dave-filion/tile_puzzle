@@ -39,11 +39,16 @@ export function isSolved(boardArray, totalTiles) {
   return true;
 }
 
+// returns {
+//  coords,
+//  relative // neighbor relative location 
+// }
 export function blankNeighbors(board) {
   const blankLoc = board.blankLoc;
   const neighbors = [];
   const maxY = board.board.length - 1;
   const maxX = board.board[0].length - 1; // assume all rows are equal
+
   if (blankLoc.x > 0) {
     // left is available
     neighbors.push({
@@ -90,7 +95,6 @@ export function blankNeighbors(board) {
   return neighbors;
 }
 
-
 export function createBoardV2(n) {
   // create matrix
   const matrix = [];
@@ -125,40 +129,53 @@ export function createBoardV2(n) {
   }
 }
 
+export function translateCoords(initCoords, direction) {
+  if (direction === "UP") {
+    return {
+      x: initCoords.x,
+      y: initCoords.y - 1
+    };
+  } else if (direction === "DOWN") {
+    return {
+      x: initCoords.x,
+      y: initCoords.y + 1
+    };
+  } else if (direction === "LEFT") {
+    return {
+      x: initCoords.x - 1,
+      y: initCoords.y
+    };
+  } else if (direction === "RIGHT") {
+    return {
+      x: initCoords.x + 1,
+      y: initCoords.y
+    };
+  } else {
+    throw "Unkown slide direction: " + direction;
+  }  
+}
+
+export function isBlankSpace(board, coords) {
+  return board.board[coords.y][coords.x] === 0;
+}
+
 // if shuffle is true, apply slide to shuffle history
 export function applySlide(board, slide, shuffle) {
-  const coords = slide.coords;
-  const fromX = coords.x;
-  const fromY = coords.y;
+  debugger;
+  const fromCoords = slide.coords;
+  const toCoords = translateCoords(fromCoords, slide.dir);
 
-  let toX;
-  let toY;
-  if (slide.dir === "UP") {
-    toX = fromX;
-    toY = fromY - 1;
-  } else if (slide.dir === "DOWN") {
-    toX = fromX;
-    toY = fromY + 1;
-  } else if (slide.dir === "LEFT") {
-    toX = fromX - 1;
-    toY = fromY;
-  } else if (slide.dir === "RIGHT") {
-    toX = fromX + 1;
-    toY = fromY;
-  } else {
-    throw "Unkown slide direction: " + slide.dir;
+  if (!isBlankSpace(board, toCoords)) {
+    throw "Trying to move piece to non blank piece!";
   }
 
-  if (board.board[toY][toX] !== 0)  {
-    throw "Trying to move piece to non blank piece";
-  }
-
-  board.board[toY][toX] = board.board[fromY][fromX];
-  board.board[fromY][fromX] = 0;
+  // Mutate board
+  board.board[toCoords.y][toCoords.x] = slide.tileId;
+  board.board[fromCoords.y][fromCoords.x] = 0;
 
   board.blankLoc = {
-    x: fromX,
-    y: fromY
+    x: fromCoords.x,
+    y: fromCoords.y
   }
 
   if (shuffle === true) {
@@ -184,6 +201,11 @@ export function inverseDirection(dir) {
   }
 }
 
+export function getTileId(board, coords) {
+  // board is [][] matrix
+  return board.board[coords.y][coords.x];
+}
+
 // Shuffles input board, and returns object containing history of shuffles and shuffled board
 export function shuffleBoard(board, maxShuffles) {
   for (let currentShuffle = 0; currentShuffle < maxShuffles; currentShuffle++) {
@@ -199,10 +221,13 @@ export function shuffleBoard(board, maxShuffles) {
     const neighborToMove = _.sample(neighbors);
     console.log("moving ", neighborToMove);
     const dir = inverseDirection(neighborToMove.relative); // reverse relative direction to get movement direction
+    const neighborCoords = neighborToMove.coords;
     const slide = {
-      coords: neighborToMove.coords,
+      tileId: getTileId(board, neighborCoords),
+      coords: neighborCoords,
       dir: dir
     };
+
     board = applySlide(board, slide, true); // true flag to append to shuffle history
   }
 

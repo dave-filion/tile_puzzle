@@ -60,71 +60,6 @@
 	var N = 3;
 	var MAX_SHUFFLES = 10;
 
-	function createBoard(n) {
-	  // 0 is blank space
-	  var numPieces = n * n;
-	  var pieces = [];
-	  for (var i = 0; i < numPieces; i++) {
-	    pieces.push(i);
-	  }
-
-	  var shuffle = _lodash2.default.shuffle(pieces);
-	  var inversions = (0, _helper.countInversions)(shuffle);
-
-	  // don't allow puzzles with no inversions
-	  while (inversions === 0) {
-	    shuffle = _lodash2.default.shuffle(pieces);
-	    inversions = (0, _helper.countInversions)(shuffle);
-	  }
-
-	  var matrix = arrayToMatrix(shuffle, n);
-
-	  if (n % 2 === 0) {
-	    // If the grid width is even, and the blank is on an even row counting from the bottom
-	    // (second-last, fourth-last etc), then the number of inversions in a solvable situation is odd.
-	    // If the grid width is even, and the blank is on an odd row counting from the bottom
-	    // (last, third-last, fifth-last etc) then the number of inversions in a solvable situation is even.
-	    var acceptable = false;
-	    while (acceptable == false) {
-	      console.log("shuffle:", shuffle);
-	      console.log("inversions:", inversions);
-
-	      var rowWithBlank = (0, _helper.rowWithBlankFromBottom)(matrix);
-	      console.log("rowWithBlank", rowWithBlank);
-	      if (rowWithBlank % 2 == 0) {
-	        // even row
-	        if (inversions % 2 != 0) {
-	          // if inversions is odd
-	          acceptable = true;
-	        } else {
-	          shuffle = _lodash2.default.shuffle(pieces);
-	          inversions = (0, _helper.countInversions)(shuffle);
-	          console.log("resuffling");
-	        }
-	      } else {
-	        // odd row
-	        if (inversions % 2 == 0) {
-	          // if inversions is even
-	          acceptable = true;
-	        } else {
-	          shuffle = _lodash2.default.shuffle(pieces);
-	          inversions = (0, _helper.countInversions)(shuffle);
-	          console.log("resuffling");
-	        }
-	      }
-	    }
-	  } else {
-	    // If the grid width is odd, then the number of inversions in a solvable situation is even.
-	    while (inversions % 2 != 0) {
-	      shuffle = _lodash2.default.shuffle(pieces);
-	      inversions = (0, _helper.countInversions)(shuffle);
-	    }
-	  }
-
-	  console.log("final puzzle: ", shuffle);
-	  return shuffle;
-	}
-
 	var img = new Image();
 	var n = N;
 	img.src = IMAGE_SRC;
@@ -282,22 +217,22 @@
 
 	    var physicalBoard = board.board;
 	    // LEFT
-	    if (x - 1 >= 0 && x - 1 < n && physicalBoard[y][x - 1] == 0) {
+	    if (x - 1 >= 0 && x - 1 < n && physicalBoard[y][x - 1] === 0) {
 	      console.log("moving left");
 	      newX = x - 1;
 	      newY = y;
 	      dir = "LEFT";
-	    } else if (x + 1 < n && physicalBoard[y][x + 1] == 0) {
+	    } else if (x + 1 < n && physicalBoard[y][x + 1] === 0) {
 	      console.log("moving right");
 	      newX = x + 1;
 	      newY = y;
 	      dir = "RIGHT";
-	    } else if (y - 1 >= 0 && physicalBoard[y - 1][x] == 0) {
+	    } else if (y - 1 >= 0 && physicalBoard[y - 1][x] === 0) {
 	      console.log("moving up");
 	      newX = x;
 	      newY = y - 1;
 	      dir = "UP";
-	    } else if (y + 1 < n && physicalBoard[y + 1][x] == 0) {
+	    } else if (y + 1 < n && physicalBoard[y + 1][x] === 0) {
 	      console.log("moving down");
 	      newX = x;
 	      newY = y + 1;
@@ -306,9 +241,13 @@
 	      console.log("no valid move");
 	    }
 
+	    debugger;
+
 	    // valid move occured
 	    if (newY != null || newX != null) {
+	      var tile = physicalBoard[y][x];
 	      var slide = {
+	        tileId: tile,
 	        coords: { x: x, y: y },
 	        dir: dir
 	      };
@@ -12730,8 +12669,11 @@
 	exports.isSolved = isSolved;
 	exports.blankNeighbors = blankNeighbors;
 	exports.createBoardV2 = createBoardV2;
+	exports.translateCoords = translateCoords;
+	exports.isBlankSpace = isBlankSpace;
 	exports.applySlide = applySlide;
 	exports.inverseDirection = inverseDirection;
+	exports.getTileId = getTileId;
 	exports.shuffleBoard = shuffleBoard;
 	function countInversions(array) {
 	  var totalInversions = 0;
@@ -12774,11 +12716,16 @@
 	  return true;
 	}
 
+	// returns {
+	//  coords,
+	//  relative // neighbor relative location
+	// }
 	function blankNeighbors(board) {
 	  var blankLoc = board.blankLoc;
 	  var neighbors = [];
 	  var maxY = board.board.length - 1;
 	  var maxX = board.board[0].length - 1; // assume all rows are equal
+
 	  if (blankLoc.x > 0) {
 	    // left is available
 	    neighbors.push({
@@ -12859,40 +12806,53 @@
 	  };
 	}
 
+	function translateCoords(initCoords, direction) {
+	  if (direction === "UP") {
+	    return {
+	      x: initCoords.x,
+	      y: initCoords.y - 1
+	    };
+	  } else if (direction === "DOWN") {
+	    return {
+	      x: initCoords.x,
+	      y: initCoords.y + 1
+	    };
+	  } else if (direction === "LEFT") {
+	    return {
+	      x: initCoords.x - 1,
+	      y: initCoords.y
+	    };
+	  } else if (direction === "RIGHT") {
+	    return {
+	      x: initCoords.x + 1,
+	      y: initCoords.y
+	    };
+	  } else {
+	    throw "Unkown slide direction: " + direction;
+	  }
+	}
+
+	function isBlankSpace(board, coords) {
+	  return board.board[coords.y][coords.x] === 0;
+	}
+
 	// if shuffle is true, apply slide to shuffle history
 	function applySlide(board, slide, shuffle) {
-	  var coords = slide.coords;
-	  var fromX = coords.x;
-	  var fromY = coords.y;
+	  debugger;
+	  var fromCoords = slide.coords;
+	  var toCoords = translateCoords(fromCoords, slide.dir);
 
-	  var toX = undefined;
-	  var toY = undefined;
-	  if (slide.dir === "UP") {
-	    toX = fromX;
-	    toY = fromY - 1;
-	  } else if (slide.dir === "DOWN") {
-	    toX = fromX;
-	    toY = fromY + 1;
-	  } else if (slide.dir === "LEFT") {
-	    toX = fromX - 1;
-	    toY = fromY;
-	  } else if (slide.dir === "RIGHT") {
-	    toX = fromX + 1;
-	    toY = fromY;
-	  } else {
-	    throw "Unkown slide direction: " + slide.dir;
+	  if (!isBlankSpace(board, toCoords)) {
+	    throw "Trying to move piece to non blank piece!";
 	  }
 
-	  if (board.board[toY][toX] !== 0) {
-	    throw "Trying to move piece to non blank piece";
-	  }
-
-	  board.board[toY][toX] = board.board[fromY][fromX];
-	  board.board[fromY][fromX] = 0;
+	  // Mutate board
+	  board.board[toCoords.y][toCoords.x] = slide.tileId;
+	  board.board[fromCoords.y][fromCoords.x] = 0;
 
 	  board.blankLoc = {
-	    x: fromX,
-	    y: fromY
+	    x: fromCoords.x,
+	    y: fromCoords.y
 	  };
 
 	  if (shuffle === true) {
@@ -12918,6 +12878,11 @@
 	  }
 	}
 
+	function getTileId(board, coords) {
+	  // board is [][] matrix
+	  return board.board[coords.y][coords.x];
+	}
+
 	// Shuffles input board, and returns object containing history of shuffles and shuffled board
 	function shuffleBoard(board, maxShuffles) {
 	  var _loop = function _loop(currentShuffle) {
@@ -12935,10 +12900,13 @@
 	    var neighborToMove = _.sample(neighbors);
 	    console.log("moving ", neighborToMove);
 	    var dir = inverseDirection(neighborToMove.relative); // reverse relative direction to get movement direction
+	    var neighborCoords = neighborToMove.coords;
 	    var slide = {
-	      coords: neighborToMove.coords,
+	      tileId: getTileId(board, neighborCoords),
+	      coords: neighborCoords,
 	      dir: dir
 	    };
+
 	    board = applySlide(board, slide, true); // true flag to append to shuffle history
 	  };
 
