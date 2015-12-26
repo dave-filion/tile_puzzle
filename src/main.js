@@ -17,7 +17,7 @@ import {
 const IMAGE_SRC = "http://www.capture-the-moment.co.uk/tp/images/382.jpg";
 const N = 3;
 const MAX_SHUFFLES = 10;
-
+const ANIMATION_DURATION = 1;
 
 let img = new Image();
 let n = N;
@@ -30,9 +30,8 @@ let tileWidth;
 let board;
 let ctx;
 
-let animate = {
+let animation = {
   active: false,
-  lastCoords: null,
   move: null
 }
 
@@ -82,78 +81,121 @@ function matrixToArray(matrix, n) {
   return arr;
 }
 
+function startSlideAnimation() {
+  console.log("starting animation");
+  const move = board.latestMove();
 
-function animateMove() {
-  const move = animate.move;
-  let startX;
-  let startY;
+  // update global animation object
+  // TODO: make this a collection to handle mutliple animations at a time
+  // init final bounds
+  const startX = move.coords.x * tileWidth;
+  const startY = move.coords.y * tileHeight;
 
-  if (animate.lastCoords == null) {
-    // init animation
-    startX = move.coords.x * tileWidth;
-    startY = move.coords.y * tileHeight;
-
-    if (move.dir === "UP") {
-      animate.finalCoords = {
-        x: startX,
-        y: (move.coords.y - 1) * tileHeight
-      }
-    } else if (move.dir === "DOWN") {
-      animate.finalCoords = {
-        x: startX,
-        y: (move.coords.y + 1) * tileHeight
-      }
-    } else if (move.dir === "LEFT") {
-      animate.finalCoords = {
-        x: (startX - 1) * tileWidth,
-        y: startY
-      }
-    } else if (move.dir === "RIGHT") {
-      animate.finalCoords = {
-        x: (startX + 1) * tileWidth,
-        y: startY
-      }
+  animation = {
+    active: true,
+    move: move,
+    latestCoords: {
+      x: startX,
+      y: startY
     }
-  } else {
-    startX = animate.lastCoords.x;
-    startY = animate.lastCoords.y;
-  }
-
-  let newX = startX;
-  let newY = startY;
-  let finished;
-
-  if (move.dir === "UP") {
-    newY = startY - 5;
-  } else if (move.dir === "DOWN") {
-    newY = startY + 5;
-  } else if (move.dir === "LEFT") {
-    newX = startX - 5;
-  } else if (move.dir === "RIGHT") {
-    newX = startX + 5;
-  }
-
-  ctx.fillStyle="#FF0000";
-  ctx.fillRect(newX, newY, tileWidth, tileHeight);
-
-  animate.lastCoords = {
-    x: newX,
-    y: newY
   };
 
-  if (animate.lastCoords.x)
+  if (move.dir === "UP") {
+    animation.finalCoords = {
+      x: startX,
+      y: (move.coords.y - 1) * tileHeight
+    }
+  } else if (move.dir === "DOWN") {
+    animation.finalCoords = {
+      x: startX,
+      y: (move.coords.y + 1) * tileHeight
+    }
+  } else if (move.dir === "LEFT") {
+    animation.finalCoords = {
+      x: (move.coords.x - 1) * tileWidth,
+      y: startY
+    }
+  } else if (move.dir === "RIGHT") {
+    animation.finalCoords = {
+      x: (move.coords.x + 1) * tileWidth,
+      y: startY
+    }
+  }
+  console.log("animation:", animation);
+  console.log("FINAL COORDS: ", animation.finalCoords);
 
-  console.log("lastCoord X-", animate.lastCoords.x);
-  console.log("lastCoord Y-", animate.lastCoords.y);
-  console.log("finalCoord X-", animate.finalCoords.x);
-  console.log("finalCoord Y-", animate.finalCoords.y);
+  window.requestAnimationFrame(draw);
+}
+
+function stopAnimation() {
+  console.log("stopping animation");
+  animation = {
+    active: false
+  };
+
+  window.requestAnimationFrame(draw);
+}
+
+function animateMove() {
+  const delta = 10;
+  const move = animation.move;
+
+  // draw blank space in starting position
+  ctx.fillRect(move.coords.x * tileWidth, move.coords.y * tileHeight, tileWidth, tileHeight);
+
+  // draw tile in proper position
+  let newX = animation.latestCoords.x;
+  let newY = animation.latestCoords.y;
+  let finished;
+  if (move.dir === "UP") {
+    newY = animation.latestCoords.y - delta;
+    if (newY <= animation.finalCoords.y) {
+      finished = true;
+    }
+  } else if (move.dir === "DOWN") {
+    newY = animation.latestCoords.y + delta;
+    if (newY >= animation.finalCoords.y) {
+      finished = true;
+    }
+  } else if (move.dir === "LEFT") {
+    newX = animation.latestCoords.x - delta;
+    if (newX <= animation.finalCoords.x) {
+      finished = true;
+    }
+  } else if (move.dir === "RIGHT") {
+    newX = animation.latestCoords.x + delta;
+    if (newX >= animation.finalCoords.x) {
+      finished = true;
+    }
+  } else {
+    throw "Unknown move direction: " + move.dir;
+  }
+
+  const tileId = move.tileId;
+  const sliceX = calcSX(tileId, n, tileWidth);
+  const sliceY = calcSY(tileId, n, tileHeight);
+
+  ctx.drawImage(img, sliceX, sliceY, tileWidth, tileHeight, newX, newY, tileWidth, tileHeight);
+
+  // Update latest coordinates
+  if (finished == true) {
+    animation = {
+      active: false
+    }
+  } else {
+    animation.latestCoords = {
+      x: newX,
+      y: newY
+    };
+  }
+
+  window.requestAnimationFrame(draw);
 }
 
 function draw() {
-  if (animate.active === true) {
+  if (animation.active === true) {
     // perform movement animation
     animateMove();
-    window.requestAnimationFrame(draw);
   } else {
     drawBoard(board, img, n);
   }
@@ -168,6 +210,11 @@ function drawBoard(board, img, n) {
   }
 
   canvas.onclick = (e) => {
+    // dont allow click if animation is happening
+    if (animation.active === true) {
+      return;
+    }
+
     const x = Math.floor((e.clientX - canvas.getBoundingClientRect().left) / tileWidth);
     const y = Math.floor((e.clientY - canvas.getBoundingClientRect().top) / tileHeight);
     console.log(x, ":", y);
@@ -203,8 +250,6 @@ function drawBoard(board, img, n) {
       console.log("no valid move");
     }
 
-    debugger;
-
     // valid move occured
     if (newY != null || newX != null) {
       const tile = physicalBoard[y][x];
@@ -215,12 +260,7 @@ function drawBoard(board, img, n) {
       }
 
       board = applySlide(board, slide);
-      animate = {
-        active: true,
-        move: board.latestMove()
-      };
-
-      window.requestAnimationFrame(draw);
+      startSlideAnimation();
     }
   }
 }

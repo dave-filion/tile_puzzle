@@ -152,7 +152,7 @@ export function translateCoords(initCoords, direction) {
     };
   } else {
     throw "Unkown slide direction: " + direction;
-  }  
+  }
 }
 
 export function isBlankSpace(board, coords) {
@@ -161,7 +161,6 @@ export function isBlankSpace(board, coords) {
 
 // if shuffle is true, apply slide to shuffle history
 export function applySlide(board, slide, shuffle) {
-  debugger;
   const fromCoords = slide.coords;
   const toCoords = translateCoords(fromCoords, slide.dir);
 
