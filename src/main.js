@@ -7,7 +7,8 @@ import {
   createBoardV2,
   inverseDirection,
   applySlide,
-  shuffleBoard
+  shuffleBoard,
+  translateCoords
 } from './helper';
 
 import {
@@ -15,9 +16,8 @@ import {
 } from './test';
 
 const IMAGE_SRC = "http://www.capture-the-moment.co.uk/tp/images/382.jpg";
-const N = 3;
-const MAX_SHUFFLES = 10;
-const ANIMATION_DURATION = 1;
+const N = 5;
+const MAX_SHUFFLES = 100;
 
 let img = new Image();
 let n = N;
@@ -30,10 +30,14 @@ let tileWidth;
 let board;
 let ctx;
 
+let solving = {
+  active: false
+};
+
 let animation = {
   active: false,
   move: null
-}
+};
 
 function calcSX(tileId, n, tileWidth) {
   return (tileId % n) * tileWidth;
@@ -196,6 +200,26 @@ function draw() {
   if (animation.active === true) {
     // perform movement animation
     animateMove();
+  } else if (solving.active === true) {
+
+    // redraw board
+    if (animation.active === false) {
+      drawBoard(board, img, n);
+    }
+
+    if (!_.isEmpty(solving.moves)) {
+      const move = solving.moves.pop();
+      const slide = {
+        tileId: move.tileId,
+        coords: translateCoords(move.coords, move.dir),
+        dir: inverseDirection(move.dir)
+      };
+      board = applySlide(board, slide);
+      startSlideAnimation();
+    } else {
+      solving.active = false;
+    }
+
   } else {
     drawBoard(board, img, n);
   }
@@ -225,7 +249,7 @@ function drawBoard(board, img, n) {
     let dir = null;
 
     let physicalBoard = board.board;
-    // LEFT
+
     if (x - 1 >= 0 && x - 1 < n && physicalBoard[y][x - 1] === 0) {
       console.log("moving left");
       newX = x - 1;
@@ -266,7 +290,9 @@ function drawBoard(board, img, n) {
 }
 
 function solve(board) {
-
+  solving.active = true;
+  solving.moves = _(board.shuffleHistory).concat(board.playerHistory).value();
+  window.requestAnimationFrame(draw);
 }
 
 img.onload = (e) => {
@@ -282,5 +308,12 @@ img.onload = (e) => {
 
   board = createBoardV2(n);
   board = shuffleBoard(board, MAX_SHUFFLES);
+
   window.requestAnimationFrame(draw);
+
+  // bind solve button
+  document.getElementById("solveButton").onclick = () => {
+    console.log("solving!");
+    solve(board);
+  };
 }

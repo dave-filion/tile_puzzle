@@ -57,9 +57,8 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var IMAGE_SRC = "http://www.capture-the-moment.co.uk/tp/images/382.jpg";
-	var N = 3;
-	var MAX_SHUFFLES = 10;
-	var ANIMATION_DURATION = 1;
+	var N = 5;
+	var MAX_SHUFFLES = 100;
 
 	var img = new Image();
 	var n = N;
@@ -71,6 +70,10 @@
 	var tileWidth = undefined;
 	var board = undefined;
 	var ctx = undefined;
+
+	var solving = {
+	  active: false
+	};
 
 	var animation = {
 	  active: false,
@@ -238,6 +241,25 @@
 	  if (animation.active === true) {
 	    // perform movement animation
 	    animateMove();
+	  } else if (solving.active === true) {
+
+	    // redraw board
+	    if (animation.active === false) {
+	      drawBoard(board, img, n);
+	    }
+
+	    if (!_lodash2.default.isEmpty(solving.moves)) {
+	      var move = solving.moves.pop();
+	      var slide = {
+	        tileId: move.tileId,
+	        coords: (0, _helper.translateCoords)(move.coords, move.dir),
+	        dir: (0, _helper.inverseDirection)(move.dir)
+	      };
+	      board = (0, _helper.applySlide)(board, slide);
+	      startSlideAnimation();
+	    } else {
+	      solving.active = false;
+	    }
 	  } else {
 	    drawBoard(board, img, n);
 	  }
@@ -267,7 +289,7 @@
 	    var dir = null;
 
 	    var physicalBoard = board.board;
-	    // LEFT
+
 	    if (x - 1 >= 0 && x - 1 < n && physicalBoard[y][x - 1] === 0) {
 	      console.log("moving left");
 	      newX = x - 1;
@@ -307,7 +329,11 @@
 	  };
 	}
 
-	function solve(board) {}
+	function solve(board) {
+	  solving.active = true;
+	  solving.moves = (0, _lodash2.default)(board.shuffleHistory).concat(board.playerHistory).value();
+	  window.requestAnimationFrame(draw);
+	}
 
 	img.onload = function (e) {
 	  (0, _test.test)();
@@ -322,7 +348,14 @@
 
 	  board = (0, _helper.createBoardV2)(n);
 	  board = (0, _helper.shuffleBoard)(board, MAX_SHUFFLES);
+
 	  window.requestAnimationFrame(draw);
+
+	  // bind solve button
+	  document.getElementById("solveButton").onclick = function () {
+	    console.log("solving!");
+	    solve(board);
+	  };
 	};
 
 /***/ },
