@@ -85,7 +85,6 @@ function matrixToArray(matrix, n) {
 }
 
 function startSlideAnimation() {
-  console.log("starting animation");
   const move = board.latestMove();
 
   // update global animation object
@@ -124,8 +123,6 @@ function startSlideAnimation() {
       y: startY
     }
   }
-  console.log("animation:", animation);
-  console.log("FINAL COORDS: ", animation.finalCoords);
 
   window.requestAnimationFrame(draw);
 }
@@ -232,6 +229,15 @@ function drawBoard(board, img, n) {
     }
   }
 
+  if (isSolved(board, n)) {
+    document.getElementById("solvedIndicator").innerHTML = "You Solved It!";
+    // Unbind action handler
+    canvas.onclick = (e) => {
+      console.log("you already solved it");
+    }
+    return;
+  }
+
   canvas.onclick = (e) => {
     // dont allow click if animation is happening
     if (animation.active === true) {
@@ -250,22 +256,18 @@ function drawBoard(board, img, n) {
     let physicalBoard = board.board;
 
     if (x - 1 >= 0 && x - 1 < n && physicalBoard[y][x - 1] === 0) {
-      console.log("moving left");
       newX = x - 1;
       newY = y;
       dir = "LEFT";
     } else if (x + 1 < n && physicalBoard[y][x + 1] === 0) {
-      console.log("moving right");
       newX = x + 1;
       newY = y;
       dir = "RIGHT";
     } else if (y - 1 >= 0 && physicalBoard[y - 1][x] === 0) {
-      console.log("moving up");
       newX = x;
       newY = y - 1;
       dir = "UP";
     } else if (y + 1 < n && physicalBoard[y + 1][x] === 0) {
-      console.log("moving down");
       newX = x;
       newY = y + 1;
       dir = "DOWN";
@@ -299,7 +301,7 @@ document.getElementById("generateButton").onclick = (e) => {
   e.preventDefault();
   const userN = document.getElementById("nInput").value;
   const userImg = document.getElementById("imgInput").value;
-  debugger;
+
   if (_.isEmpty(userN)) {
     n = DEFAULT_N;
   } else {

@@ -30,10 +30,14 @@ export function rowWithBlankFromBottom(matrix) {
 }
 
 // Takes board array and determines if in solved state
-export function isSolved(boardArray, totalTiles) {
-  for (var i = 0; i < totalTiles; i++) {
-    if (boardArray[i] != i) {
-      return false;
+export function isSolved(board, n) {
+  let id = 0;
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j ++) {
+      if (board.board[i][j] !== id) {
+        return false;
+      }
+      id += 1;
     }
   }
   return true;

@@ -42,26 +42,6 @@ function inversionsTest() {
   }
 }
 
-function isSolvedTest() {
-  console.log("TEST - isSolved");
-  const t1 = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-  const r1 = isSolved(t1, 9);
-  if (r1 !== true) {
-    throw "Should be true";
-  }
-  const t2 = [2, 1, 0, 3, 4, 5, 6, 7, 8];
-  const r2 = isSolved(t2, 9);
-  if (r2 === true) {
-    throw "Should be false";
-  }
-
-  const t3 = [0, 1, 2, 3];
-  const r3 = isSolved(t3, 4);
-  if (r3 !== true) {
-    throw "Should be true";
-  }
-}
-
 function blankNeighborsTest() {
   console.log("TEST - blankNeighbors");
   const b1 = createBoardV2(3); // creates basic board
@@ -93,7 +73,6 @@ function testShuffleAndReset() {
 export function test() {
   inversionsTest();
   testRowWithBlankFromBottom();
-  isSolvedTest();
   blankNeighborsTest();
   testShuffleAndReset();
 }

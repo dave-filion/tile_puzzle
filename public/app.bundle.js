@@ -126,7 +126,6 @@
 	}
 
 	function startSlideAnimation() {
-	  console.log("starting animation");
 	  var move = board.latestMove();
 
 	  // update global animation object
@@ -165,8 +164,6 @@
 	      y: startY
 	    };
 	  }
-	  console.log("animation:", animation);
-	  console.log("FINAL COORDS: ", animation.finalCoords);
 
 	  window.requestAnimationFrame(draw);
 	}
@@ -272,6 +269,15 @@
 	    }
 	  }
 
+	  if ((0, _helper.isSolved)(board, n)) {
+	    document.getElementById("solvedIndicator").innerHTML = "You Solved It!";
+	    // Unbind action handler
+	    canvas.onclick = function (e) {
+	      console.log("you already solved it");
+	    };
+	    return;
+	  }
+
 	  canvas.onclick = function (e) {
 	    // dont allow click if animation is happening
 	    if (animation.active === true) {
@@ -290,22 +296,18 @@
 	    var physicalBoard = board.board;
 
 	    if (x - 1 >= 0 && x - 1 < n && physicalBoard[y][x - 1] === 0) {
-	      console.log("moving left");
 	      newX = x - 1;
 	      newY = y;
 	      dir = "LEFT";
 	    } else if (x + 1 < n && physicalBoard[y][x + 1] === 0) {
-	      console.log("moving right");
 	      newX = x + 1;
 	      newY = y;
 	      dir = "RIGHT";
 	    } else if (y - 1 >= 0 && physicalBoard[y - 1][x] === 0) {
-	      console.log("moving up");
 	      newX = x;
 	      newY = y - 1;
 	      dir = "UP";
 	    } else if (y + 1 < n && physicalBoard[y + 1][x] === 0) {
-	      console.log("moving down");
 	      newX = x;
 	      newY = y + 1;
 	      dir = "DOWN";
@@ -339,7 +341,7 @@
 	  e.preventDefault();
 	  var userN = document.getElementById("nInput").value;
 	  var userImg = document.getElementById("imgInput").value;
-	  debugger;
+
 	  if (_lodash2.default.isEmpty(userN)) {
 	    n = DEFAULT_N;
 	  } else {
@@ -12803,10 +12805,14 @@
 	}
 
 	// Takes board array and determines if in solved state
-	function isSolved(boardArray, totalTiles) {
-	  for (var i = 0; i < totalTiles; i++) {
-	    if (boardArray[i] != i) {
-	      return false;
+	function isSolved(board, n) {
+	  var id = 0;
+	  for (var i = 0; i < n; i++) {
+	    for (var j = 0; j < n; j++) {
+	      if (board.board[i][j] !== id) {
+	        return false;
+	      }
+	      id += 1;
 	    }
 	  }
 	  return true;
@@ -13059,26 +13065,6 @@
 	  }
 	}
 
-	function isSolvedTest() {
-	  console.log("TEST - isSolved");
-	  var t1 = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-	  var r1 = (0, _helper.isSolved)(t1, 9);
-	  if (r1 !== true) {
-	    throw "Should be true";
-	  }
-	  var t2 = [2, 1, 0, 3, 4, 5, 6, 7, 8];
-	  var r2 = (0, _helper.isSolved)(t2, 9);
-	  if (r2 === true) {
-	    throw "Should be false";
-	  }
-
-	  var t3 = [0, 1, 2, 3];
-	  var r3 = (0, _helper.isSolved)(t3, 4);
-	  if (r3 !== true) {
-	    throw "Should be true";
-	  }
-	}
-
 	function blankNeighborsTest() {
 	  console.log("TEST - blankNeighbors");
 	  var b1 = (0, _helper.createBoardV2)(3); // creates basic board
@@ -13107,7 +13093,6 @@
 	function test() {
 	  inversionsTest();
 	  testRowWithBlankFromBottom();
-	  isSolvedTest();
 	  blankNeighborsTest();
 	  testShuffleAndReset();
 	}
