@@ -225,6 +225,25 @@ function draw() {
   }
 }
 
+// Updates high score DOM element. Expects map of userId -> score
+function setHighScoreDisplay(highScores) {
+  // progmatically generate table
+  const tbl = document.createElement('table');
+  const body = document.createElement('tbody');
+  _.each(highScores, (score, userId) => {
+    const tr = document.createElement('td');
+    const userIdTd = document.createElement('td');
+    userIdTd.appendChild(document.createTextNode(userId));
+    const scoreTd = document.createElement('td');
+    scoreTd.appendChild(document.createTextNode(score));
+    tr.appendChild(userIdTd);
+    tr.appendChild(scoreTd);
+    body.appendChild(tr);
+  });
+  tbl.appendChild(body);
+  document.getElementById('highScoreContainer').appendChild(tbl);
+}
+
 function drawBoard(board, img, n) {
   // update move counter
   document.getElementById("moveCounter").innerHTML = board.moves;
@@ -239,22 +258,32 @@ function drawBoard(board, img, n) {
   if (isSolved(board, n)) {
     document.getElementById("solvedIndicator").innerHTML = "You Solved It!";
     // Unbind action handler
-    canvas.onclick = (e) => {
-      console.log("you already solved it");
-    }
+    canvas.onclick = (e) => console.log("you already solved it");
+
+    // post high score to backend
+    fetch("/api/highScore", {
+      method: "post",
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        userId: 'dave',
+        score: board.moves
+      })
+    }).then(response => {
+      setHighScoreDisplay(response);
+    });
+
     return;
   }
 
   canvas.onclick = (e) => {
     // dont allow click if animation is happening
-    if (animation.active === true) {
-      return;
-    }
+    if (animation.active === true) { return; }
 
     const x = Math.floor((e.clientX - canvas.getBoundingClientRect().left) / tileWidth);
     const y = Math.floor((e.clientY - canvas.getBoundingClientRect().top) / tileHeight);
-    console.log(x, ":", y);
-    // move piece to 0 space
 
     let newX = null;
     let newY = null;
@@ -308,6 +337,9 @@ document.getElementById("generateButton").onclick = (e) => {
   e.preventDefault();
   const userN = document.getElementById("nInput").value;
   const userImg = document.getElementById("imgInput").value;
+
+  // fetch high scores
+  fetch("/api/highScore").then(response => setHighScoreDisplay(response));
 
   if (_.isEmpty(userN)) {
     n = DEFAULT_N;

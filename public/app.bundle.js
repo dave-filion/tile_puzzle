@@ -265,6 +265,25 @@
 	  }
 	}
 
+	// Updates high score DOM element. Expects map of userId -> score
+	function setHighScoreDisplay(highScores) {
+	  // progmatically generate table
+	  var tbl = document.createElement('table');
+	  var body = document.createElement('tbody');
+	  _lodash2.default.each(highScores, function (score, userId) {
+	    var tr = document.createElement('td');
+	    var userIdTd = document.createElement('td');
+	    userIdTd.appendChild(document.createTextNode(userId));
+	    var scoreTd = document.createElement('td');
+	    scoreTd.appendChild(document.createTextNode(score));
+	    tr.appendChild(userIdTd);
+	    tr.appendChild(scoreTd);
+	    body.appendChild(tr);
+	  });
+	  tbl.appendChild(body);
+	  document.getElementById('highScoreContainer').appendChild(tbl);
+	}
+
 	function drawBoard(board, img, n) {
 	  // update move counter
 	  document.getElementById("moveCounter").innerHTML = board.moves;
@@ -280,8 +299,24 @@
 	    document.getElementById("solvedIndicator").innerHTML = "You Solved It!";
 	    // Unbind action handler
 	    canvas.onclick = function (e) {
-	      console.log("you already solved it");
+	      return console.log("you already solved it");
 	    };
+
+	    // post high score to backend
+	    fetch("/api/highScore", {
+	      method: "post",
+	      headers: {
+	        'Accept': 'application/json',
+	        'Content-Type': 'application/json'
+	      },
+	      body: JSON.stringify({
+	        userId: 'dave',
+	        score: board.moves
+	      })
+	    }).then(function (response) {
+	      setHighScoreDisplay(response);
+	    });
+
 	    return;
 	  }
 
@@ -293,8 +328,6 @@
 
 	    var x = Math.floor((e.clientX - canvas.getBoundingClientRect().left) / tileWidth);
 	    var y = Math.floor((e.clientY - canvas.getBoundingClientRect().top) / tileHeight);
-	    console.log(x, ":", y);
-	    // move piece to 0 space
 
 	    var newX = null;
 	    var newY = null;
@@ -348,6 +381,11 @@
 	  e.preventDefault();
 	  var userN = document.getElementById("nInput").value;
 	  var userImg = document.getElementById("imgInput").value;
+
+	  // fetch high scores
+	  fetch("/api/highScore").then(function (response) {
+	    return setHighScoreDisplay(response);
+	  });
 
 	  if (_lodash2.default.isEmpty(userN)) {
 	    n = DEFAULT_N;
