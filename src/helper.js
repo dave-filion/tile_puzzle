@@ -117,17 +117,13 @@ export function createBoardV2(n) {
       x: 0,
       y: 0
     },
-    playerHistory: [],
-    shuffleHistory: [],
+    history: [],
+    moves: 0,
     latestMove: function(){
-      if (_.isEmpty(this.playerHistory)) {
-        if (!_.isEmpty(this.shuffleHistory)) {
-          return this.shuffleHistory[this.shuffleHistory.length - 1];
-        } else {
-          return null;
-        }
+      if (!_.isEmpty(this.history)) {
+        return this.history[this.history.length - 1];
       } else {
-        return this.playerHistory[this.playerHistory.length - 1];
+        return null;
       }
     }
   }
@@ -181,10 +177,10 @@ export function applySlide(board, slide, shuffle) {
     y: fromCoords.y
   }
 
-  if (shuffle === true) {
-    board.shuffleHistory.push(slide);
-  } else {
-    board.playerHistory.push(slide);
+  board.history.push(slide);
+
+  if (shuffle !== true) {
+    board.moves = board.moves + 1;
   }
 
   return board;

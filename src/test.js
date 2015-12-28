@@ -64,7 +64,7 @@ function testShuffleAndReset() {
   console.log("TEST - shuffle and reset");
   const b1 = createBoardV2(3);
   const shuffle = shuffleBoard(b1, 10); // 10 shuffles
-  if (shuffle.shuffleHistory.length !== 10) {
+  if (shuffle.history.length !== 10) {
     throw "Should have 10 shuffles!"
   }
 }

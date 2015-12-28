@@ -98,7 +98,11 @@
 	  if (tileId != 0) {
 	    ctx.drawImage(img, sliceX, sliceY, sliceWidth, sliceHeight, dx, dy, tileWidth, tileHeight);
 	  } else {
+	    ctx.fillStyle = "#F2F2F2";
 	    ctx.fillRect(dx, dy, tileWidth, tileHeight);
+	    // ctx.lineWidth = 3;
+	    // ctx.strokeStyle = "#5C5C5C";
+	    // ctx.strokeRect(dx, dy, tileWidth, tileHeight);
 	  }
 	}
 
@@ -262,6 +266,9 @@
 	}
 
 	function drawBoard(board, img, n) {
+	  // update move counter
+	  document.getElementById("moveCounter").innerHTML = board.moves;
+
 	  for (var i = 0; i < n; i++) {
 	    for (var j = 0; j < n; j++) {
 	      var tile = board.board[i][j];
@@ -332,7 +339,7 @@
 
 	function solve(board) {
 	  solving.active = true;
-	  solving.moves = (0, _lodash2.default)(board.shuffleHistory).concat(board.playerHistory).value();
+	  solving.moves = _lodash2.default.clone(board.history);
 	  window.requestAnimationFrame(draw);
 	}
 
@@ -12892,17 +12899,13 @@
 	      x: 0,
 	      y: 0
 	    },
-	    playerHistory: [],
-	    shuffleHistory: [],
+	    history: [],
+	    moves: 0,
 	    latestMove: function latestMove() {
-	      if (_.isEmpty(this.playerHistory)) {
-	        if (!_.isEmpty(this.shuffleHistory)) {
-	          return this.shuffleHistory[this.shuffleHistory.length - 1];
-	        } else {
-	          return null;
-	        }
+	      if (!_.isEmpty(this.history)) {
+	        return this.history[this.history.length - 1];
 	      } else {
-	        return this.playerHistory[this.playerHistory.length - 1];
+	        return null;
 	      }
 	    }
 	  };
@@ -12956,10 +12959,10 @@
 	    y: fromCoords.y
 	  };
 
-	  if (shuffle === true) {
-	    board.shuffleHistory.push(slide);
-	  } else {
-	    board.playerHistory.push(slide);
+	  board.history.push(slide);
+
+	  if (shuffle !== true) {
+	    board.moves = board.moves + 1;
 	  }
 
 	  return board;
@@ -13085,7 +13088,7 @@
 	  console.log("TEST - shuffle and reset");
 	  var b1 = (0, _helper.createBoardV2)(3);
 	  var shuffle = (0, _helper.shuffleBoard)(b1, 10); // 10 shuffles
-	  if (shuffle.shuffleHistory.length !== 10) {
+	  if (shuffle.history.length !== 10) {
 	    throw "Should have 10 shuffles!";
 	  }
 	}

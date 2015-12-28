@@ -57,7 +57,11 @@ function drawTile(tileId, x, y, img, n) {
   if (tileId != 0) {
     ctx.drawImage(img, sliceX, sliceY, sliceWidth, sliceHeight, dx, dy, tileWidth, tileHeight);
   } else {
+    ctx.fillStyle = "#F2F2F2";
     ctx.fillRect(dx, dy, tileWidth, tileHeight);
+    // ctx.lineWidth = 3;
+    // ctx.strokeStyle = "#5C5C5C";
+    // ctx.strokeRect(dx, dy, tileWidth, tileHeight);
   }
 }
 
@@ -222,6 +226,9 @@ function draw() {
 }
 
 function drawBoard(board, img, n) {
+  // update move counter
+  document.getElementById("moveCounter").innerHTML = board.moves;
+
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < n; j++) {
       const tile = board.board[i][j];
@@ -292,7 +299,7 @@ function drawBoard(board, img, n) {
 
 function solve(board) {
   solving.active = true;
-  solving.moves = _(board.shuffleHistory).concat(board.playerHistory).value();
+  solving.moves = _.clone(board.history);
   window.requestAnimationFrame(draw);
 }
 
