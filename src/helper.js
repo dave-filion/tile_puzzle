@@ -161,7 +161,7 @@ export function isBlankSpace(board, coords) {
 }
 
 // if shuffle is true, apply slide to shuffle history
-export function applySlide(board, slide, shuffle) {
+export function applySlide(board, slide, opts = {}) {
   const fromCoords = slide.coords;
   const toCoords = translateCoords(fromCoords, slide.dir);
 
@@ -178,9 +178,11 @@ export function applySlide(board, slide, shuffle) {
     y: fromCoords.y
   }
 
-  board.history.push(slide);
+  if (opts.addToHistory && opts.addToHistory === true) {
+    board.history.push(slide);
+  }
 
-  if (shuffle !== true) {
+  if (opts.incMoves && opts.incMoves === true) {
     board.moves = board.moves + 1;
   }
 
@@ -228,7 +230,10 @@ export function shuffleBoard(board, maxShuffles) {
       dir: dir
     };
 
-    board = applySlide(board, slide, true); // true flag to append to shuffle history
+    board = applySlide(board, slide, {
+      addToHistory: true,
+      incMoves: false
+    });
   }
 
   return board;

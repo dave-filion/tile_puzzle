@@ -113,20 +113,17 @@
 	  }
 	}
 
-	function startSlideAnimation(state) {
-	  var board = state.board;
+	function startSlideAnimation(slide, state) {
 	  var tileWidth = state.tileWidth;
 	  var tileHeight = state.tileHeight;
 
-	  var move = board.latestMove();
-
-	  var startX = move.coords.x * tileWidth;
-	  var startY = move.coords.y * tileHeight;
+	  var startX = slide.coords.x * tileWidth;
+	  var startY = slide.coords.y * tileHeight;
 
 	  // update animation in state
 	  state.animation = {
 	    active: true,
-	    move: move,
+	    move: slide,
 	    latestCoords: {
 	      x: startX,
 	      y: startY
@@ -134,24 +131,24 @@
 	  };
 
 	  // set final bounds
-	  if (move.dir === "UP") {
+	  if (slide.dir === "UP") {
 	    state.animation.finalCoords = {
 	      x: startX,
-	      y: (move.coords.y - 1) * tileHeight
+	      y: (slide.coords.y - 1) * tileHeight
 	    };
-	  } else if (move.dir === "DOWN") {
+	  } else if (slide.dir === "DOWN") {
 	    state.animation.finalCoords = {
 	      x: startX,
-	      y: (move.coords.y + 1) * tileHeight
+	      y: (slide.coords.y + 1) * tileHeight
 	    };
-	  } else if (move.dir === "LEFT") {
+	  } else if (slide.dir === "LEFT") {
 	    state.animation.finalCoords = {
-	      x: (move.coords.x - 1) * tileWidth,
+	      x: (slide.coords.x - 1) * tileWidth,
 	      y: startY
 	    };
-	  } else if (move.dir === "RIGHT") {
+	  } else if (slide.dir === "RIGHT") {
 	    state.animation.finalCoords = {
-	      x: (move.coords.x + 1) * tileWidth,
+	      x: (slide.coords.x + 1) * tileWidth,
 	      y: startY
 	    };
 	  }
@@ -212,8 +209,12 @@
 	    };
 
 	    // Update board
-	    state.board = (0, _helper.applySlide)(board, slide);
-	    startSlideAnimation(state);
+	    state.board = (0, _helper.applySlide)(board, slide, {
+	      addToHistory: true,
+	      incMoves: true
+	    });
+
+	    startSlideAnimation(slide, state);
 	  }
 	}
 
@@ -307,8 +308,13 @@
 	        coords: (0, _helper.translateCoords)(move.coords, move.dir),
 	        dir: (0, _helper.inverseDirection)(move.dir)
 	      };
-	      state.board = (0, _helper.applySlide)(state.board, slide);
-	      startSlideAnimation(state);
+
+	      state.board = (0, _helper.applySlide)(state.board, slide, {
+	        addToHistory: false,
+	        incMoves: false
+	      });
+
+	      startSlideAnimation(slide, state);
 	    } else {
 	      // Done solving
 	      state.solving.active = false;
@@ -13057,7 +13063,9 @@
 	}
 
 	// if shuffle is true, apply slide to shuffle history
-	function applySlide(board, slide, shuffle) {
+	function applySlide(board, slide) {
+	  var opts = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+
 	  var fromCoords = slide.coords;
 	  var toCoords = translateCoords(fromCoords, slide.dir);
 
@@ -13074,9 +13082,11 @@
 	    y: fromCoords.y
 	  };
 
-	  board.history.push(slide);
+	  if (opts.addToHistory && opts.addToHistory === true) {
+	    board.history.push(slide);
+	  }
 
-	  if (shuffle !== true) {
+	  if (opts.incMoves && opts.incMoves === true) {
 	    board.moves = board.moves + 1;
 	  }
 
@@ -13126,7 +13136,10 @@
 	      dir: dir
 	    };
 
-	    board = applySlide(board, slide, true); // true flag to append to shuffle history
+	    board = applySlide(board, slide, {
+	      addToHistory: true,
+	      incMoves: false
+	    });
 	  };
 
 	  for (var currentShuffle = 0; currentShuffle < maxShuffles; currentShuffle++) {

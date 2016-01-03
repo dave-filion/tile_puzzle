@@ -74,22 +74,19 @@ function renderTile(tileId, x, y, state) {
   }
 }
 
-function startSlideAnimation(state) {
+function startSlideAnimation(slide, state) {
   const {
-    board,
     tileWidth,
     tileHeight
   } = state;
 
-  const move = board.latestMove();
-
-  const startX = move.coords.x * tileWidth;
-  const startY = move.coords.y * tileHeight;
+  const startX = slide.coords.x * tileWidth;
+  const startY = slide.coords.y * tileHeight;
 
   // update animation in state
   state.animation = {
     active: true,
-    move: move,
+    move: slide,
     latestCoords: {
       x: startX,
       y: startY
@@ -97,24 +94,24 @@ function startSlideAnimation(state) {
   };
 
   // set final bounds
-  if (move.dir === "UP") {
+  if (slide.dir === "UP") {
     state.animation.finalCoords = {
       x: startX,
-      y: (move.coords.y - 1) * tileHeight
+      y: (slide.coords.y - 1) * tileHeight
     }
-  } else if (move.dir === "DOWN") {
+  } else if (slide.dir === "DOWN") {
     state.animation.finalCoords = {
       x: startX,
-      y: (move.coords.y + 1) * tileHeight
+      y: (slide.coords.y + 1) * tileHeight
     }
-  } else if (move.dir === "LEFT") {
+  } else if (slide.dir === "LEFT") {
     state.animation.finalCoords = {
-      x: (move.coords.x - 1) * tileWidth,
+      x: (slide.coords.x - 1) * tileWidth,
       y: startY
     }
-  } else if (move.dir === "RIGHT") {
+  } else if (slide.dir === "RIGHT") {
     state.animation.finalCoords = {
-      x: (move.coords.x + 1) * tileWidth,
+      x: (slide.coords.x + 1) * tileWidth,
       y: startY
     }
   }
@@ -174,8 +171,12 @@ function boardClickCallback(e, state) {
     }
 
     // Update board
-    state.board = applySlide(board, slide);
-    startSlideAnimation(state);
+    state.board = applySlide(board, slide, {
+      addToHistory: true,
+      incMoves: true
+    });
+
+    startSlideAnimation(slide, state);
   }
 }
 
@@ -271,8 +272,13 @@ function draw() {
         coords: translateCoords(move.coords, move.dir),
         dir: inverseDirection(move.dir)
       };
-      state.board = applySlide(state.board, slide);
-      startSlideAnimation(state);
+
+      state.board = applySlide(state.board, slide, {
+        addToHistory: false,
+        incMoves: false
+      });
+
+      startSlideAnimation(slide, state);
     } else {
       // Done solving
       state.solving.active = false;
