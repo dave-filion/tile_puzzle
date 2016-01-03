@@ -57,7 +57,8 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var DEFAULT_IMG = "http://www.capture-the-moment.co.uk/tp/images/382.jpg";
-	var DEFAULT_N = 3;
+	var DEFAULT_N = 3; // ROWS
+	var DEFAULT_M = 3; // COLS
 	var MAX_SHUFFLES = 100;
 	var initialAnimationState = {
 	  active: false,
@@ -81,12 +82,12 @@
 	  tileWidth: null
 	};
 
-	function calcSX(tileId, n, tileWidth) {
-	  return tileId % n * tileWidth;
+	function calcSX(tileId, m, tileWidth) {
+	  return tileId % m * tileWidth;
 	}
 
-	function calcSY(tileId, n, tileHeight) {
-	  return Math.floor(tileId / n) * tileHeight;
+	function calcSY(tileId, m, tileHeight) {
+	  return Math.floor(tileId / m) * tileHeight;
 	}
 
 	function renderTile(tileId, x, y, state) {
@@ -94,11 +95,13 @@
 	  var tileHeight = state.tileHeight;
 	  var img = state.img;
 	  var n = state.n;
+	  var m = state.m;
 
-	  var sliceX = calcSX(tileId, n, tileWidth);
-	  var sliceY = calcSY(tileId, n, tileHeight);
+	  var sliceX = calcSX(tileId, m, tileWidth);
+	  var sliceY = calcSY(tileId, m, tileHeight);
 	  var sliceWidth = tileWidth;
 	  var sliceHeight = tileHeight;
+
 	  var dx = x * tileWidth;
 	  var dy = y * tileHeight;
 
@@ -232,6 +235,7 @@
 	  var ctx = state.ctx;
 	  var img = state.img;
 	  var n = state.n;
+	  var m = state.m;
 
 	  var move = animation.move;
 
@@ -269,8 +273,8 @@
 	  }
 
 	  var tileId = move.tileId;
-	  var sliceX = calcSX(tileId, n, tileWidth);
-	  var sliceY = calcSY(tileId, n, tileHeight);
+	  var sliceX = calcSX(tileId, m, tileWidth);
+	  var sliceY = calcSY(tileId, m, tileHeight);
 
 	  ctx.drawImage(img, sliceX, sliceY, tileWidth, tileHeight, newX, newY, tileWidth, tileHeight);
 
@@ -371,9 +375,11 @@
 
 	function renderBoard(state) {
 	  var n = state.n;
+	  var m = state.m;
 	  var board = state.board;
+
 	  for (var i = 0; i < n; i++) {
-	    for (var j = 0; j < n; j++) {
+	    for (var j = 0; j < m; j++) {
 	      var tile = board.board[i][j];
 	      renderTile(tile, j, i, state);
 	    }
@@ -406,6 +412,7 @@
 	  document.getElementById("generateButton").onclick = function (e) {
 	    e.preventDefault();
 	    var userN = document.getElementById("nInput").value;
+	    var userM = document.getElementById("mInput").value;
 	    var userImg = document.getElementById("imgInput").value;
 
 	    // fetch high scores
@@ -418,6 +425,13 @@
 	      n = DEFAULT_N;
 	    } else {
 	      n = parseInt(userN);
+	    }
+
+	    var m = undefined;
+	    if (_lodash2.default.isEmpty(userM)) {
+	      m = DEFAULT_M;
+	    } else {
+	      m = parseInt(userM);
 	    }
 
 	    state.img = new Image();
@@ -435,11 +449,17 @@
 	      canvas.width = imageWidth;
 	      canvas.height = imageHeight;
 	      state.tileHeight = imageHeight / n;
-	      state.tileWidth = imageWidth / n;
+	      state.tileWidth = imageWidth / m;
 	      state.n = n;
+	      state.m = m;
 	      state.ctx = canvas.getContext("2d");
 
-	      var board = (0, _helper.createBoardV2)(state.n);
+	      var board = (0, _helper.createBoardV2)(state.n, state.m);
+
+	      // number of shuffles determined by n. This assumes n and
+	      // m are close (as is the default). More sophisticated logic
+	      // should probably be used here to arrive at the optimium number
+	      // of shuffles
 	      state.board = (0, _helper.shuffleBoard)(board, state.n * 10);
 
 	      // bind solve button
@@ -12887,10 +12907,11 @@
 	function isSolved(state) {
 	  var board = state.board;
 	  var n = state.n;
+	  var m = state.m;
 
 	  var id = 0;
 	  for (var i = 0; i < n; i++) {
-	    for (var j = 0; j < n; j++) {
+	    for (var j = 0; j < m; j++) {
 	      if (board.board[i][j] !== id) {
 	        return false;
 	      }
@@ -12956,13 +12977,13 @@
 	  return neighbors;
 	}
 
-	function createBoardV2(n) {
+	function createBoardV2(n, m) {
 	  // create matrix
 	  var matrix = [];
 	  var id = 0;
 	  for (var i = 0; i < n; i++) {
 	    matrix[i] = [];
-	    for (var j = 0; j < n; j++) {
+	    for (var j = 0; j < m; j++) {
 	      matrix[i][j] = id;
 	      id += 1;
 	    }

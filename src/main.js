@@ -16,7 +16,8 @@ import {
 } from './test';
 
 const DEFAULT_IMG = "http://www.capture-the-moment.co.uk/tp/images/382.jpg";
-const DEFAULT_N = 3;
+const DEFAULT_N = 3; // ROWS
+const DEFAULT_M = 3; // COLS
 const MAX_SHUFFLES = 100;
 const initialAnimationState = {
   active: false,
@@ -40,12 +41,12 @@ let state = {
   tileWidth: null,
 };
 
-function calcSX(tileId, n, tileWidth) {
-  return (tileId % n) * tileWidth;
+function calcSX(tileId, m, tileWidth) {
+  return (tileId % m) * tileWidth;
 }
 
-function calcSY(tileId, n, tileHeight) {
-  return Math.floor(tileId / n) * tileHeight;
+function calcSY(tileId, m, tileHeight) {
+  return Math.floor(tileId / m) * tileHeight;
 }
 
 function renderTile(tileId, x, y, state) {
@@ -53,13 +54,15 @@ function renderTile(tileId, x, y, state) {
     tileWidth,
     tileHeight,
     img,
-    n
+    n,
+    m
   } = state;
 
-  const sliceX = calcSX(tileId, n, tileWidth);
-  const sliceY =  calcSY(tileId, n, tileHeight);
+  const sliceX = calcSX(tileId, m, tileWidth);
+  const sliceY =  calcSY(tileId, m, tileHeight);
   const sliceWidth = tileWidth;
   const sliceHeight = tileHeight;
+
   const dx = x * tileWidth;
   const dy = y * tileHeight;
 
@@ -194,7 +197,8 @@ function animateMove(state) {
     tileWidth,
     ctx,
     img,
-    n
+    n,
+    m
   } = state;
 
   const move = animation.move;
@@ -233,8 +237,8 @@ function animateMove(state) {
   }
 
   const tileId = move.tileId;
-  const sliceX = calcSX(tileId, n, tileWidth);
-  const sliceY = calcSY(tileId, n, tileHeight);
+  const sliceX = calcSX(tileId, m, tileWidth);
+  const sliceY = calcSY(tileId, m, tileHeight);
 
   ctx.drawImage(img, sliceX, sliceY, tileWidth, tileHeight, newX, newY, tileWidth, tileHeight);
 
@@ -334,10 +338,9 @@ function renderCurrentScore(currentScore) {
 }
 
 function renderBoard(state) {
-  const n = state.n;
-  const board = state.board;
+  const {n, m, board} = state;
   for (let i = 0; i < n; i++) {
-    for (let j = 0; j < n; j++) {
+    for (let j = 0; j < m; j++) {
       const tile = board.board[i][j];
       renderTile(tile, j, i, state);
     }
@@ -370,6 +373,7 @@ function main() {
   document.getElementById("generateButton").onclick = (e) => {
     e.preventDefault();
     const userN = document.getElementById("nInput").value;
+    const userM = document.getElementById("mInput").value;
     const userImg = document.getElementById("imgInput").value;
 
     // fetch high scores
@@ -380,6 +384,13 @@ function main() {
       n = DEFAULT_N;
     } else {
       n = parseInt(userN);
+    }
+
+    let m;
+    if (_.isEmpty(userM)) {
+      m = DEFAULT_M;
+    } else {
+      m = parseInt(userM);
     }
 
     state.img = new Image();
@@ -397,11 +408,17 @@ function main() {
       canvas.width = imageWidth;
       canvas.height = imageHeight;
       state.tileHeight = imageHeight / n;
-      state.tileWidth = imageWidth / n;
+      state.tileWidth = imageWidth / m;
       state.n = n;
+      state.m = m;
       state.ctx = canvas.getContext("2d");
 
-      let board = createBoardV2(state.n);
+      let board = createBoardV2(state.n, state.m);
+
+      // number of shuffles determined by n. This assumes n and
+      // m are close (as is the default). More sophisticated logic
+      // should probably be used here to arrive at the optimium number
+      // of shuffles
       state.board = shuffleBoard(board, state.n * 10);
 
       // bind solve button

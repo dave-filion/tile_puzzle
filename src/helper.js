@@ -31,10 +31,10 @@ export function rowWithBlankFromBottom(matrix) {
 
 // Takes game state and returns if board is solved
 export function isSolved(state) {
-  const {board, n} = state;
+  const {board, n, m} = state;
   let id = 0;
   for (let i = 0; i < n; i++) {
-    for (let j = 0; j < n; j ++) {
+    for (let j = 0; j < m; j ++) {
       if (board.board[i][j] !== id) {
         return false;
       }
@@ -100,13 +100,13 @@ export function blankNeighbors(board) {
   return neighbors;
 }
 
-export function createBoardV2(n) {
+export function createBoardV2(n, m) {
   // create matrix
   const matrix = [];
   let id = 0;
   for (let i = 0; i < n; i++) {
     matrix[i] = [];
-    for (let j = 0; j < n; j++) {
+    for (let j = 0; j < m; j++) {
       matrix[i][j] = id;
       id += 1;
     }
