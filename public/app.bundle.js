@@ -178,7 +178,6 @@
 	}
 
 	function animateMove() {
-	  var delta = 15;
 	  var move = animation.move;
 
 	  // draw blank space in starting position
@@ -188,6 +187,8 @@
 	  var newX = animation.latestCoords.x;
 	  var newY = animation.latestCoords.y;
 	  var finished = undefined;
+	  var delta = 10;
+
 	  if (move.dir === "UP") {
 	    newY = animation.latestCoords.y - delta;
 	    if (newY <= animation.finalCoords.y) {

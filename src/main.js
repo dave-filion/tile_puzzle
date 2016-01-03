@@ -137,7 +137,6 @@ function stopAnimation() {
 }
 
 function animateMove() {
-  const delta = 15;
   const move = animation.move;
 
   // draw blank space in starting position
@@ -147,6 +146,8 @@ function animateMove() {
   let newX = animation.latestCoords.x;
   let newY = animation.latestCoords.y;
   let finished;
+  const delta = 10;
+
   if (move.dir === "UP") {
     newY = animation.latestCoords.y - delta;
     if (newY <= animation.finalCoords.y) {
