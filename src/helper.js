@@ -29,8 +29,9 @@ export function rowWithBlankFromBottom(matrix) {
   }
 }
 
-// Takes board array and determines if in solved state
-export function isSolved(board, n) {
+// Takes game state and returns if board is solved
+export function isSolved(state) {
+  const {board, n} = state;
   let id = 0;
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < n; j ++) {

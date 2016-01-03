@@ -59,24 +59,26 @@
 	var DEFAULT_IMG = "http://www.capture-the-moment.co.uk/tp/images/382.jpg";
 	var DEFAULT_N = 3;
 	var MAX_SHUFFLES = 100;
-
-	var n = undefined;
-	var img = undefined;
-	var canvas = document.getElementById("canvas");
-	var imageHeight = undefined;
-	var imageWidth = undefined;
-	var tileHeight = undefined;
-	var tileWidth = undefined;
-	var board = undefined;
-	var ctx = undefined;
-
-	var solving = {
+	var initialAnimationState = {
+	  active: false,
+	  move: null
+	};
+	var initialSolvingState = {
 	  active: false
 	};
 
-	var animation = {
-	  active: false,
-	  move: null
+	var canvas = document.getElementById("canvas");
+
+	// Global state object
+	var state = {
+	  board: null,
+	  animation: initialAnimationState,
+	  solving: initialSolvingState,
+	  img: null,
+	  n: null,
+	  m: null,
+	  tileHeight: null,
+	  tileWidth: null
 	};
 
 	function calcSX(tileId, n, tileWidth) {
@@ -87,7 +89,12 @@
 	  return Math.floor(tileId / n) * tileHeight;
 	}
 
-	function drawTile(tileId, x, y, img, n) {
+	function renderTile(tileId, x, y, state) {
+	  var tileWidth = state.tileWidth;
+	  var tileHeight = state.tileHeight;
+	  var img = state.img;
+	  var n = state.n;
+
 	  var sliceX = calcSX(tileId, n, tileWidth);
 	  var sliceY = calcSY(tileId, n, tileHeight);
 	  var sliceWidth = tileWidth;
@@ -96,49 +103,28 @@
 	  var dy = y * tileHeight;
 
 	  if (tileId != 0) {
-	    ctx.drawImage(img, sliceX, sliceY, sliceWidth, sliceHeight, dx, dy, tileWidth, tileHeight);
+	    state.ctx.drawImage(img, sliceX, sliceY, sliceWidth, sliceHeight, dx, dy, tileWidth, tileHeight);
 	  } else {
-	    ctx.fillStyle = "#F2F2F2";
-	    ctx.fillRect(dx, dy, tileWidth, tileHeight);
+	    state.ctx.fillStyle = "#F2F2F2";
+	    state.ctx.fillRect(dx, dy, tileWidth, tileHeight);
 	    // ctx.lineWidth = 3;
 	    // ctx.strokeStyle = "#5C5C5C";
 	    // ctx.strokeRect(dx, dy, tileWidth, tileHeight);
 	  }
 	}
 
-	function arrayToMatrix(arr, n) {
-	  var matrix = [];
-	  for (var i = 0; i < n; i++) {
-	    matrix[i] = [];
-	    for (var j = 0; j < n; j++) {
-	      var tile = _lodash2.default.first(arr);
-	      matrix[i].push(tile);
-	      arr = _lodash2.default.rest(arr);
-	    }
-	  }
-	  return matrix;
-	}
+	function startSlideAnimation(state) {
+	  var board = state.board;
+	  var tileWidth = state.tileWidth;
+	  var tileHeight = state.tileHeight;
 
-	function matrixToArray(matrix, n) {
-	  var arr = [];
-	  for (var i = 0; i < n; i++) {
-	    for (var j = 0; j < n; j++) {
-	      arr.push(matrix[i][j]);
-	    }
-	  }
-	  return arr;
-	}
-
-	function startSlideAnimation() {
 	  var move = board.latestMove();
 
-	  // update global animation object
-	  // TODO: make this a collection to handle mutliple animations at a time
-	  // init final bounds
 	  var startX = move.coords.x * tileWidth;
 	  var startY = move.coords.y * tileHeight;
 
-	  animation = {
+	  // update animation in state
+	  state.animation = {
 	    active: true,
 	    move: move,
 	    latestCoords: {
@@ -147,23 +133,24 @@
 	    }
 	  };
 
+	  // set final bounds
 	  if (move.dir === "UP") {
-	    animation.finalCoords = {
+	    state.animation.finalCoords = {
 	      x: startX,
 	      y: (move.coords.y - 1) * tileHeight
 	    };
 	  } else if (move.dir === "DOWN") {
-	    animation.finalCoords = {
+	    state.animation.finalCoords = {
 	      x: startX,
 	      y: (move.coords.y + 1) * tileHeight
 	    };
 	  } else if (move.dir === "LEFT") {
-	    animation.finalCoords = {
+	    state.animation.finalCoords = {
 	      x: (move.coords.x - 1) * tileWidth,
 	      y: startY
 	    };
 	  } else if (move.dir === "RIGHT") {
-	    animation.finalCoords = {
+	    state.animation.finalCoords = {
 	      x: (move.coords.x + 1) * tileWidth,
 	      y: startY
 	    };
@@ -172,16 +159,80 @@
 	  window.requestAnimationFrame(draw);
 	}
 
-	function stopAnimation() {
+	// Handles tile clicks
+	function boardClickCallback(e, state) {
+	  var animation = state.animation;
+	  var tileWidth = state.tileWidth;
+	  var tileHeight = state.tileHeight;
+	  var board = state.board;
+	  var n = state.n;
+
+	  // dont allow click if animation is happening
+
+	  if (animation.active === true) {
+	    return;
+	  }
+
+	  var x = Math.floor((e.clientX - canvas.getBoundingClientRect().left) / tileWidth);
+	  var y = Math.floor((e.clientY - canvas.getBoundingClientRect().top) / tileHeight);
+
+	  var newX = null;
+	  var newY = null;
+	  var dir = null;
+
+	  var physicalBoard = board.board;
+
+	  if (x - 1 >= 0 && x - 1 < n && physicalBoard[y][x - 1] === 0) {
+	    newX = x - 1;
+	    newY = y;
+	    dir = "LEFT";
+	  } else if (x + 1 < n && physicalBoard[y][x + 1] === 0) {
+	    newX = x + 1;
+	    newY = y;
+	    dir = "RIGHT";
+	  } else if (y - 1 >= 0 && physicalBoard[y - 1][x] === 0) {
+	    newX = x;
+	    newY = y - 1;
+	    dir = "UP";
+	  } else if (y + 1 < n && physicalBoard[y + 1][x] === 0) {
+	    newX = x;
+	    newY = y + 1;
+	    dir = "DOWN";
+	  } else {
+	    console.log("no valid move");
+	  }
+
+	  // valid move occured
+	  if (newY != null || newX != null) {
+	    var tile = physicalBoard[y][x];
+	    var slide = {
+	      tileId: tile,
+	      coords: { x: x, y: y },
+	      dir: dir
+	    };
+
+	    // Update board
+	    state.board = (0, _helper.applySlide)(board, slide);
+	    startSlideAnimation(state);
+	  }
+	}
+
+	function stopAnimation(state) {
 	  console.log("stopping animation");
-	  animation = {
+	  state.animation = {
 	    active: false
 	  };
-
 	  window.requestAnimationFrame(draw);
 	}
 
-	function animateMove() {
+	function animateMove(state) {
+	  var animation = state.animation;
+	  var tileHeight = state.tileHeight;
+	  var tileWidth = state.tileWidth;
+	  var ctx = state.ctx;
+	  var img = state.img;
+	  var n = state.n;
+
 	  var move = animation.move;
 
 	  // draw blank space in starting position
@@ -191,7 +242,7 @@
 	  var newX = animation.latestCoords.x;
 	  var newY = animation.latestCoords.y;
 	  var finished = undefined;
-	  var delta = 10;
+	  var delta = 15;
 
 	  if (move.dir === "UP") {
 	    newY = animation.latestCoords.y - delta;
@@ -225,11 +276,11 @@
 
 	  // Update latest coordinates
 	  if (finished == true) {
-	    animation = {
+	    state.animation = {
 	      active: false
 	    };
 	  } else {
-	    animation.latestCoords = {
+	    state.animation.latestCoords = {
 	      x: newX,
 	      y: newY
 	    };
@@ -238,31 +289,43 @@
 	  window.requestAnimationFrame(draw);
 	}
 
+	// Main drawing function. Examines game state to determine what
+	// render function to call.
 	function draw() {
-	  if (animation.active === true) {
-	    // perform movement animation
-	    animateMove();
-	  } else if (solving.active === true) {
-
-	    // redraw board
-	    if (animation.active === false) {
-	      drawBoard(board, img, n);
+	  if (state.animation.active === true) {
+	    animateMove(state);
+	  } else if (state.solving.active === true) {
+	    if (state.animation.active === false) {
+	      renderGame(state);
 	    }
 
-	    if (!_lodash2.default.isEmpty(solving.moves)) {
-	      var move = solving.moves.pop();
+	    if (!_lodash2.default.isEmpty(state.solving.moves)) {
+	      var move = state.solving.moves.pop();
 	      var slide = {
 	        tileId: move.tileId,
 	        coords: (0, _helper.translateCoords)(move.coords, move.dir),
 	        dir: (0, _helper.inverseDirection)(move.dir)
 	      };
-	      board = (0, _helper.applySlide)(board, slide);
-	      startSlideAnimation();
+	      state.board = (0, _helper.applySlide)(state.board, slide);
+	      startSlideAnimation(state);
 	    } else {
-	      solving.active = false;
+	      state.solving.active = false;
 	    }
 	  } else {
-	    drawBoard(board, img, n);
+	    if ((0, _helper.isSolved)(state)) {
+	      // Unbind action handler
+	      canvas.onclick = function (e) {};
+
+	      // post high score to backend
+	      postScore("dave", state.board.moves).then(function (response) {
+	        setHighScoreDisplay(response);
+	      });
+	    } else {
+	      renderGame(state);
+	      canvas.onclick = function (e) {
+	        return boardClickCallback(e, state);
+	      };
+	    }
 	  }
 	}
 
@@ -285,145 +348,115 @@
 	  document.getElementById('highScoreContainer').appendChild(tbl);
 	}
 
-	function drawBoard(board, img, n) {
-	  // update move counter
-	  document.getElementById("moveCounter").innerHTML = board.moves;
+	function postScore(userId, score) {
+	  // Using github's fetch polyfill rather than jQuery, due
+	  // to size of library and (in my opinion) a better API.
+	  // Returns a Promise
+	  return fetch("/api/highScore", {
+	    method: "post",
+	    headers: {
+	      'Accept': 'application/json',
+	      'Content-Type': 'application/json'
+	    },
+	    body: JSON.stringify({
+	      userId: userId,
+	      score: score
+	    })
+	  });
+	}
 
+	function renderCurrentScore(currentScore) {
+	  document.getElementById("moveCounter").innerHTML = currentScore;
+	}
+
+	function renderBoard(state) {
+	  var n = state.n;
+	  var board = state.board;
 	  for (var i = 0; i < n; i++) {
 	    for (var j = 0; j < n; j++) {
 	      var tile = board.board[i][j];
-	      drawTile(tile, j, i, img, n);
+	      renderTile(tile, j, i, state);
 	    }
 	  }
-
-	  if ((0, _helper.isSolved)(board, n)) {
-	    document.getElementById("solvedIndicator").innerHTML = "You Solved It!";
-	    // Unbind action handler
-	    canvas.onclick = function (e) {
-	      return console.log("you already solved it");
-	    };
-
-	    // post high score to backend
-	    fetch("/api/highScore", {
-	      method: "post",
-	      headers: {
-	        'Accept': 'application/json',
-	        'Content-Type': 'application/json'
-	      },
-	      body: JSON.stringify({
-	        userId: 'dave',
-	        score: board.moves
-	      })
-	    }).then(function (response) {
-	      setHighScoreDisplay(response);
-	    });
-
-	    return;
-	  }
-
-	  canvas.onclick = function (e) {
-	    // dont allow click if animation is happening
-	    if (animation.active === true) {
-	      return;
-	    }
-
-	    var x = Math.floor((e.clientX - canvas.getBoundingClientRect().left) / tileWidth);
-	    var y = Math.floor((e.clientY - canvas.getBoundingClientRect().top) / tileHeight);
-
-	    var newX = null;
-	    var newY = null;
-	    var dir = null;
-
-	    var physicalBoard = board.board;
-
-	    if (x - 1 >= 0 && x - 1 < n && physicalBoard[y][x - 1] === 0) {
-	      newX = x - 1;
-	      newY = y;
-	      dir = "LEFT";
-	    } else if (x + 1 < n && physicalBoard[y][x + 1] === 0) {
-	      newX = x + 1;
-	      newY = y;
-	      dir = "RIGHT";
-	    } else if (y - 1 >= 0 && physicalBoard[y - 1][x] === 0) {
-	      newX = x;
-	      newY = y - 1;
-	      dir = "UP";
-	    } else if (y + 1 < n && physicalBoard[y + 1][x] === 0) {
-	      newX = x;
-	      newY = y + 1;
-	      dir = "DOWN";
-	    } else {
-	      console.log("no valid move");
-	    }
-
-	    // valid move occured
-	    if (newY != null || newX != null) {
-	      var tile = physicalBoard[y][x];
-	      var slide = {
-	        tileId: tile,
-	        coords: { x: x, y: y },
-	        dir: dir
-	      };
-
-	      board = (0, _helper.applySlide)(board, slide);
-	      startSlideAnimation();
-	    }
-	  };
 	}
 
-	function solve(board) {
-	  solving.active = true;
-	  solving.moves = _lodash2.default.clone(board.history);
+	function renderSuccess() {
+	  document.getElementById("solvedIndicator").innerHTML = "You Solved It!";
+	}
+
+	function renderGame(state) {
+	  // rerender current score display
+	  renderCurrentScore(state.board.moves);
+
+	  // render game board
+	  renderBoard(state);
+	}
+
+	function solve(state) {
+	  state.solving.active = true;
+	  state.solving.moves = _lodash2.default.clone(state.board.history);
 	  window.requestAnimationFrame(draw);
 	}
 
-	// Onload
-	document.getElementById("generateButton").onclick = function (e) {
-	  e.preventDefault();
-	  var userN = document.getElementById("nInput").value;
-	  var userImg = document.getElementById("imgInput").value;
+	// Entry point after page has loaded
+	function main() {
+	  console.log("Tile puzzle loaded!");
 
-	  // fetch high scores
-	  fetch("/api/highScore").then(function (response) {
-	    return setHighScoreDisplay(response);
-	  });
+	  // bind generate button
+	  document.getElementById("generateButton").onclick = function (e) {
+	    e.preventDefault();
+	    var userN = document.getElementById("nInput").value;
+	    var userImg = document.getElementById("imgInput").value;
 
-	  if (_lodash2.default.isEmpty(userN)) {
-	    n = DEFAULT_N;
-	  } else {
-	    n = parseInt(userN);
-	  }
+	    // fetch high scores
+	    fetch("/api/highScore").then(function (response) {
+	      return setHighScoreDisplay(response);
+	    });
 
-	  img = new Image();
-	  if (_lodash2.default.isEmpty(userImg)) {
-	    img.src = DEFAULT_IMG;
-	  } else {
-	    img.src = userImg;
-	  }
+	    var n = undefined;
+	    if (_lodash2.default.isEmpty(userN)) {
+	      n = DEFAULT_N;
+	    } else {
+	      n = parseInt(userN);
+	    }
 
-	  img.onload = function (e) {
-	    (0, _test.test)();
-	    var image = e.target;
-	    imageHeight = image.height;
-	    imageWidth = image.width;
-	    canvas.width = imageWidth;
-	    canvas.height = imageHeight;
-	    tileHeight = imageHeight / n;
-	    tileWidth = imageWidth / n;
-	    ctx = canvas.getContext("2d");
+	    state.img = new Image();
+	    if (_lodash2.default.isEmpty(userImg)) {
+	      state.img.src = DEFAULT_IMG;
+	    } else {
+	      state.img.src = userImg;
+	    }
 
-	    board = (0, _helper.createBoardV2)(n);
-	    board = (0, _helper.shuffleBoard)(board, n * 20);
+	    state.img.onload = function (e) {
+	      var image = e.target;
 
-	    window.requestAnimationFrame(draw);
+	      var imageHeight = image.height;
+	      var imageWidth = image.width;
+	      canvas.width = imageWidth;
+	      canvas.height = imageHeight;
+	      state.tileHeight = imageHeight / n;
+	      state.tileWidth = imageWidth / n;
+	      state.n = n;
+	      state.ctx = canvas.getContext("2d");
 
-	    // bind solve button
-	    document.getElementById("solveButton").onclick = function () {
-	      console.log("solving!");
-	      solve(board);
+	      var board = (0, _helper.createBoardV2)(state.n);
+	      state.board = (0, _helper.shuffleBoard)(board, state.n * 10);
+
+	      // bind solve button
+	      document.getElementById("solveButton").onclick = function () {
+	        solve(state);
+	      };
+
+	      // begin drawing
+	      window.requestAnimationFrame(draw);
 	    };
 	  };
-	};
+	}
+
+	// non jquery document on ready (does not work in IE8)
+	document.addEventListener("DOMContentLoaded", function (event) {
+	  main();
+	});
 
 /***/ },
 /* 1 */
@@ -12850,8 +12883,11 @@
 	  }
 	}
 
-	// Takes board array and determines if in solved state
-	function isSolved(board, n) {
+	// Takes game state and returns if board is solved
+	function isSolved(state) {
+	  var board = state.board;
+	  var n = state.n;
+
 	  var id = 0;
 	  for (var i = 0; i < n; i++) {
 	    for (var j = 0; j < n; j++) {
