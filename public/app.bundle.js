@@ -98,7 +98,11 @@
 	  if (tileId != 0) {
 	    ctx.drawImage(img, sliceX, sliceY, sliceWidth, sliceHeight, dx, dy, tileWidth, tileHeight);
 	  } else {
+	    ctx.fillStyle = "#F2F2F2";
 	    ctx.fillRect(dx, dy, tileWidth, tileHeight);
+	    // ctx.lineWidth = 3;
+	    // ctx.strokeStyle = "#5C5C5C";
+	    // ctx.strokeRect(dx, dy, tileWidth, tileHeight);
 	  }
 	}
 
@@ -262,7 +266,29 @@
 	  }
 	}
 
+	// Updates high score DOM element. Expects map of userId -> score
+	function setHighScoreDisplay(highScores) {
+	  // progmatically generate table
+	  var tbl = document.createElement('table');
+	  var body = document.createElement('tbody');
+	  _lodash2.default.each(highScores, function (score, userId) {
+	    var tr = document.createElement('td');
+	    var userIdTd = document.createElement('td');
+	    userIdTd.appendChild(document.createTextNode(userId));
+	    var scoreTd = document.createElement('td');
+	    scoreTd.appendChild(document.createTextNode(score));
+	    tr.appendChild(userIdTd);
+	    tr.appendChild(scoreTd);
+	    body.appendChild(tr);
+	  });
+	  tbl.appendChild(body);
+	  document.getElementById('highScoreContainer').appendChild(tbl);
+	}
+
 	function drawBoard(board, img, n) {
+	  // update move counter
+	  document.getElementById("moveCounter").innerHTML = board.moves;
+
 	  for (var i = 0; i < n; i++) {
 	    for (var j = 0; j < n; j++) {
 	      var tile = board.board[i][j];
@@ -274,8 +300,24 @@
 	    document.getElementById("solvedIndicator").innerHTML = "You Solved It!";
 	    // Unbind action handler
 	    canvas.onclick = function (e) {
-	      console.log("you already solved it");
+	      return console.log("you already solved it");
 	    };
+
+	    // post high score to backend
+	    fetch("/api/highScore", {
+	      method: "post",
+	      headers: {
+	        'Accept': 'application/json',
+	        'Content-Type': 'application/json'
+	      },
+	      body: JSON.stringify({
+	        userId: 'dave',
+	        score: board.moves
+	      })
+	    }).then(function (response) {
+	      setHighScoreDisplay(response);
+	    });
+
 	    return;
 	  }
 
@@ -287,8 +329,6 @@
 
 	    var x = Math.floor((e.clientX - canvas.getBoundingClientRect().left) / tileWidth);
 	    var y = Math.floor((e.clientY - canvas.getBoundingClientRect().top) / tileHeight);
-	    console.log(x, ":", y);
-	    // move piece to 0 space
 
 	    var newX = null;
 	    var newY = null;
@@ -333,7 +373,7 @@
 
 	function solve(board) {
 	  solving.active = true;
-	  solving.moves = (0, _lodash2.default)(board.shuffleHistory).concat(board.playerHistory).value();
+	  solving.moves = _lodash2.default.clone(board.history);
 	  window.requestAnimationFrame(draw);
 	}
 
@@ -342,6 +382,11 @@
 	  e.preventDefault();
 	  var userN = document.getElementById("nInput").value;
 	  var userImg = document.getElementById("imgInput").value;
+
+	  // fetch high scores
+	  fetch("/api/highScore").then(function (response) {
+	    return setHighScoreDisplay(response);
+	  });
 
 	  if (_lodash2.default.isEmpty(userN)) {
 	    n = DEFAULT_N;
@@ -12893,17 +12938,13 @@
 	      x: 0,
 	      y: 0
 	    },
-	    playerHistory: [],
-	    shuffleHistory: [],
+	    history: [],
+	    moves: 0,
 	    latestMove: function latestMove() {
-	      if (_.isEmpty(this.playerHistory)) {
-	        if (!_.isEmpty(this.shuffleHistory)) {
-	          return this.shuffleHistory[this.shuffleHistory.length - 1];
-	        } else {
-	          return null;
-	        }
+	      if (!_.isEmpty(this.history)) {
+	        return this.history[this.history.length - 1];
 	      } else {
-	        return this.playerHistory[this.playerHistory.length - 1];
+	        return null;
 	      }
 	    }
 	  };
@@ -12957,10 +12998,10 @@
 	    y: fromCoords.y
 	  };
 
-	  if (shuffle === true) {
-	    board.shuffleHistory.push(slide);
-	  } else {
-	    board.playerHistory.push(slide);
+	  board.history.push(slide);
+
+	  if (shuffle !== true) {
+	    board.moves = board.moves + 1;
 	  }
 
 	  return board;
@@ -13086,7 +13127,7 @@
 	  console.log("TEST - shuffle and reset");
 	  var b1 = (0, _helper.createBoardV2)(3);
 	  var shuffle = (0, _helper.shuffleBoard)(b1, 10); // 10 shuffles
-	  if (shuffle.shuffleHistory.length !== 10) {
+	  if (shuffle.history.length !== 10) {
 	    throw "Should have 10 shuffles!";
 	  }
 	}
