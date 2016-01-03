@@ -71,9 +71,6 @@ function renderTile(tileId, x, y, state) {
   } else {
     state.ctx.fillStyle = "#F2F2F2";
     state.ctx.fillRect(dx, dy, tileWidth, tileHeight);
-    // ctx.lineWidth = 3;
-    // ctx.strokeStyle = "#5C5C5C";
-    // ctx.strokeRect(dx, dy, tileWidth, tileHeight);
   }
 }
 
@@ -277,7 +274,12 @@ function draw() {
       state.board = applySlide(state.board, slide);
       startSlideAnimation(state);
     } else {
+      // Done solving
       state.solving.active = false;
+      canvas.onclick = (e) => {};
+      document.getElementById("solveButton").onclick = (e) => {
+        e.preventDefault();
+      };
     }
 
   } else {
@@ -285,25 +287,31 @@ function draw() {
       // Unbind action handler
       canvas.onclick = (e) => {};
 
+      renderSuccess(true);
+
       // post high score to backend
       postScore("dave", state.board.moves)
-      .then(response => {
-        setHighScoreDisplay(response);
-      });
+      .then(response => response.json()
+        .then(json => renderTopScores(json)));
     } else {
       renderGame(state);
+      renderSuccess(false);
       canvas.onclick = e => boardClickCallback(e, state);
     }
   }
 }
 
 // Updates high score DOM element. Expects map of userId -> score
-function setHighScoreDisplay(highScores) {
-  // progmatically generate table
+function renderTopScores(highScores) {
+  // progmatically generate table. Not ideal, a view library such as React
+  // would be preferable here.
+  document.getElementById("highScoreContainer").innerHTML = "";
   const tbl = document.createElement('table');
+  tbl.className = 'pure-table pure-table-bordered';
+
   const body = document.createElement('tbody');
   _.each(highScores, (score, userId) => {
-    const tr = document.createElement('td');
+    const tr = document.createElement('tr');
     const userIdTd = document.createElement('td');
     userIdTd.appendChild(document.createTextNode(userId));
     const scoreTd = document.createElement('td');
@@ -347,8 +355,12 @@ function renderBoard(state) {
   }
 }
 
-function renderSuccess() {
-  document.getElementById("solvedIndicator").innerHTML = "You Solved It!";
+function renderSuccess(solved) {
+  if (solved === true) {
+    document.getElementById("solvedIndicator").innerHTML = "You Solved It!";
+  } else {
+    document.getElementById("solvedIndicator").innerHTML = "";
+  }
 }
 
 function renderGame(state) {
@@ -369,15 +381,17 @@ function solve(state) {
 function main() {
   console.log("Tile puzzle loaded!");
 
+  // fetch high scores
+  fetch("/api/highScore")
+  .then(response => response.json()
+    .then(json => renderTopScores(json)));
+
   // bind generate button
   document.getElementById("generateButton").onclick = (e) => {
     e.preventDefault();
     const userN = document.getElementById("nInput").value;
     const userM = document.getElementById("mInput").value;
     const userImg = document.getElementById("imgInput").value;
-
-    // fetch high scores
-    fetch("/api/highScore").then(response => setHighScoreDisplay(response));
 
     let n;
     if (_.isEmpty(userN)) {
@@ -394,6 +408,7 @@ function main() {
     }
 
     state.img = new Image();
+
     if (_.isEmpty(userImg)) {
       state.img.src = DEFAULT_IMG;
     } else {
@@ -422,7 +437,8 @@ function main() {
       state.board = shuffleBoard(board, state.n * 10);
 
       // bind solve button
-      document.getElementById("solveButton").onclick = () => {
+      document.getElementById("solveButton").onclick = (e) => {
+        e.preventDefault();
         solve(state);
       };
 
