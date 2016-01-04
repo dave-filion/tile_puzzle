@@ -3,6 +3,7 @@
 ## Running:
 Make sure you have npm/node installed. Then:
 
+    npm install
     node index.js
 
 This will start the server. Direct your broswer to [localhost:3000](http://localhost:3000) to view!
