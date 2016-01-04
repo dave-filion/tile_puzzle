@@ -307,7 +307,7 @@ function draw() {
   }
 }
 
-// Updates high score DOM element. Expects map of userId -> score
+// Updates high score DOM element
 function renderTopScores(highScores) {
   // progmatically generate table. Not ideal, a view library such as React
   // would be preferable here.
@@ -316,7 +316,9 @@ function renderTopScores(highScores) {
   tbl.className = 'pure-table pure-table-bordered';
 
   const body = document.createElement('tbody');
-  _.each(highScores, (score, userId) => {
+  _.each(highScores, (scoreObj) => {
+    const score = scoreObj.score;
+    const userId = scoreObj.userId;
     const tr = document.createElement('tr');
     const userIdTd = document.createElement('td');
     userIdTd.appendChild(document.createTextNode(userId));
@@ -422,6 +424,16 @@ function main() {
     }
 
     state.img.onload = (e) => {
+      // set up arrow key controls
+      document.addEventListener("keydown", (e) => {
+        const keyCode = e.keyCode;
+        console.log(keyCode);
+        if (keyCode === 37) {
+          // LEFT
+
+        }
+      }, false);
+
       const image = e.target;
 
       let imageHeight = image.height;

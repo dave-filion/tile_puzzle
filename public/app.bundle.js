@@ -346,7 +346,7 @@
 	  }
 	}
 
-	// Updates high score DOM element. Expects map of userId -> score
+	// Updates high score DOM element
 	function renderTopScores(highScores) {
 	  // progmatically generate table. Not ideal, a view library such as React
 	  // would be preferable here.
@@ -355,7 +355,9 @@
 	  tbl.className = 'pure-table pure-table-bordered';
 
 	  var body = document.createElement('tbody');
-	  _lodash2.default.each(highScores, function (score, userId) {
+	  _lodash2.default.each(highScores, function (scoreObj) {
+	    var score = scoreObj.score;
+	    var userId = scoreObj.userId;
 	    var tr = document.createElement('tr');
 	    var userIdTd = document.createElement('td');
 	    userIdTd.appendChild(document.createTextNode(userId));
@@ -466,6 +468,16 @@
 	    }
 
 	    state.img.onload = function (e) {
+	      // set up arrow key controls
+	      document.addEventListener("keydown", function (e) {
+	        var keyCode = e.keyCode;
+	        console.log(keyCode);
+	        if (keyCode === 37) {
+	          // LEFT
+
+	        }
+	      }, false);
+
 	      var image = e.target;
 
 	      var imageHeight = image.height;

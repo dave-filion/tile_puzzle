@@ -1,5 +1,7 @@
 var express = require("express");
 var bodyParser = require('body-parser');
+var _ = require("lodash");
+
 console.log("Starting Tile Puzzle!");
 
 var app = express();
@@ -8,23 +10,22 @@ app.use(bodyParser.json()); // json request parsing middleware
 
 // high score data structure just kept in memory.
 // Ideally this would be persisted in a datastore
-var highScores = {
-  bob: 12,
-  steve: 44
-};
+var highScores = [
+  {userId: 'dave', score: 12},
+  {userId: 'ste221', score: 15},
+  {userId: 'owkd', score: 99}
+];
 
 function updateHighScore(userId, score) {
-  var previousScore = highScores[userId];
-  if (!previousScore) {
-    highScores[userId] = parseInt(score);
-  } else {
-    // lower score is better
-    var intScore = parseInt(score);
-    if (previousScore > score) {
-      highScores[userId] = score;
-    }
-  }
+  highScores.push({
+    userId: userId,
+    score: score
+  });
   return highScores;
+}
+
+function sortByScore(highScores) {
+  return _.sortBy(highScores, 'score');
 }
 
 app.get("/", function(req, res) {
@@ -32,13 +33,13 @@ app.get("/", function(req, res) {
 });
 
 app.get("/api/highScore", function(req, res) {
-  res.json(highScores);
+  res.json(sortByScore(highScores));
 });
 
 app.post("/api/highScore", function(req, res) {
   var body = req.body;
   var updatedScores = updateHighScore(body.userId, body.score);
-  res.json(updatedScores);
+  res.json(sortByScore(updatedScores));
 });
 
 var server = app.listen(3000, function() {
