@@ -26,6 +26,9 @@ const initialAnimationState = {
 const initialSolvingState = {
   active: false
 };
+const initialHintState = {
+  active: false
+};
 
 const canvas = document.getElementById("canvas");
 
@@ -34,6 +37,7 @@ let state = {
   board: null,
   animation: initialAnimationState,
   solving: initialSolvingState,
+  hint: initialHintState,
   img: null,
   n: null,
   m: null,
@@ -260,6 +264,29 @@ function animateMove(state) {
 function draw() {
   if (state.animation.active === true) {
     animateMove(state);
+  } else if (state.hint.active === true) {
+    // perform hint move.
+    // TODO: this is performed very naively right now, by simply moving one step backwards in history
+    // towards the solved state.
+    const move = state.board.history.pop();
+
+    // create oppisite move
+    const slide = {
+      tileId: move.tileId,
+      coords: translateCoords(move.coords, move.dir),
+      dir: inverseDirection(move.dir)
+    };
+
+    state.board = applySlide(state.board, slide, {
+      addToHistory: false,
+      incMoves: true
+    });
+
+    // turn off hint mode
+    state.hint.active = false;
+
+    startSlideAnimation(slide, state);
+
   } else if (state.solving.active === true) {
     if (state.animation.active === false) {
       renderGame(state);
@@ -385,6 +412,12 @@ function solve(state) {
   window.requestAnimationFrame(draw);
 }
 
+// Update board with 1 move "hint"
+function hint(state) {
+  state.hint.active = true;
+  window.requestAnimationFrame(draw);
+}
+
 // Entry point after page has loaded
 function main() {
   console.log("Tile puzzle loaded!");
@@ -459,6 +492,12 @@ function main() {
         e.preventDefault();
         solve(state);
       };
+
+      // bind hint button
+      document.getElementById("hintButton").onclick = (e) => {
+        e.preventDefault();
+        hint(state);
+      }
 
       // begin drawing
       window.requestAnimationFrame(draw);

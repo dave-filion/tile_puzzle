@@ -33,13 +33,13 @@ app.get("/", function(req, res) {
 });
 
 app.get("/api/highScore", function(req, res) {
-  res.json(sortByScore(highScores));
+  res.json(_.take(sortByScore(highScores), 5));
 });
 
 app.post("/api/highScore", function(req, res) {
   var body = req.body;
   var updatedScores = updateHighScore(body.userId, body.score);
-  res.json(sortByScore(updatedScores));
+  res.json(_.take(sortByScore(updatedScores), 5));
 });
 
 var server = app.listen(3000, function() {
