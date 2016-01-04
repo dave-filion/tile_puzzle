@@ -13,53 +13,73 @@
   <body>
     <div id="content">
       <div class="pure-g">
-        <div class="pure-u-1-2">
-          <div class="padded-box"><canvas height="300" width="300" id="canvas"></canvas></div>
-
-          <div class="pure-g">
-            <div class="pure-u-1-2">
-              <h2>Moves: <span id="moveCounter"></span></h2>
+        <div class="pure-u-1-3">
+          <div class="padded-box">
+            <div>
+              <h4>To create a puzzle, enter parameters as desired (you don't have to if you want the defaults), and click generate!</h4>
             </div>
-            <div class="pure-u-1-2">
-              <h2><span id="solvedIndicator"></span></h2>
+            <form class="pure-form pure-form-aligned">
+              <legend>Tile Puzzle Generator</legend>
+
+              <fieldset>
+                <div class="pure-control-group">
+                  <label>Rows:</label>
+                  <input type="text"
+                         placeholder="(Default 3)"
+                         id="nInput" />
+                </div>
+
+                <div class="pure-control-group">
+                  <label>Columns:</label>
+                  <input type="text"
+                         placeholder="(Default 3)"
+                         id="mInput" />
+                </div>
+
+                <div class="pure-control-group">
+                  <label>Image:</label>
+                  <input type="text"
+                         placeholder="(Default Bird)"
+                         id="imgInput" />
+                </div>
+
+                <div class="pure-controls">
+                  <button id="generateButton"
+                          class="pure-button pure-button-primary">Generate</button>
+                </div>
+              </fieldset>
+            </form>
+
+            <div>
+              <h3>Top Scores</h3>
+              <div id="highScoreContainer"></div>
             </div>
           </div>
         </div>
 
-        <div class="pure-u-1-2">
+        <div class="pure-u-2-3">
           <div class="padded-box">
-            <form class="pure-form">
-              <legend>Tile Puzzle Generator</legend>
-              <input type="text"
-                     placeholder="Rows (default 3)"
-                     id="nInput" />
-              <input type="text"
-                     placeholder="Columns (default 3)"
-                     id="mInput" />
+            <canvas height="300" width="300" id="canvas"></canvas>
 
-              <input type="text"
-                     placeholder="Optional Image URL"
-                     id="imgInput" />
-              <button id="generateButton"
-                      class="pure-button pure-button-primary">Generate!</button>
-              <button id="hintButton"
-                      class="pure-button">Hint</button>
-              <button id="solveButton"
-                      class="pure-button">Solve!</button>
+            <div class="padded-box">
 
-            </form>
-          </div>
+              <div class="pure-g">
+                <div class="pure-u-1">
+                    <button id="hintButton" class="pure-button">Hint</button>
+                    <button id="solveButton" class="pure-button">Solve!</button>
+                </div>
+              </div>
 
+              <div class="pure-g">
+                <div class="pure-u-1-2">
+                  <h2>Moves: <span id="moveCounter"></span></h2>
+                </div>
+                <div class="pure-u-1-2">
+                  <h2><span id="solvedIndicator"></span></h2>
+                </div>
+              </div>
 
-
-      </div>
-
-
-
-        <div class="pure-u-1-2">
-          <div class="padded-box">
-            <legend>Top 5 Scores</legend>
-            <div id="highScoreContainer"></div>
+            </div>
           </div>
         </div>
       </div>
