@@ -50,11 +50,11 @@
 
 	var _lodash2 = _interopRequireDefault(_lodash);
 
-	var _jquery = __webpack_require__(5);
+	var _jquery = __webpack_require__(3);
 
 	var _jquery2 = _interopRequireDefault(_jquery);
 
-	var _helper = __webpack_require__(3);
+	var _helper = __webpack_require__(4);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -501,6 +501,7 @@
 	    }
 
 	    state.img.onload = function (e) {
+	      (0, _jquery2.default)("#puzzle-container").removeAttr("hidden");
 	      (0, _jquery2.default)("#loading").empty();
 	      var image = e.target;
 
@@ -12923,279 +12924,6 @@
 
 /***/ },
 /* 3 */
-/***/ function(module, exports) {
-
-	"use strict";
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.countInversions = countInversions;
-	exports.rowWithBlankFromBottom = rowWithBlankFromBottom;
-	exports.isSolved = isSolved;
-	exports.blankNeighbors = blankNeighbors;
-	exports.createBoardV2 = createBoardV2;
-	exports.translateCoords = translateCoords;
-	exports.isBlankSpace = isBlankSpace;
-	exports.applySlide = applySlide;
-	exports.inverseDirection = inverseDirection;
-	exports.getTileId = getTileId;
-	exports.shuffleBoard = shuffleBoard;
-	function countInversions(array) {
-	  var totalInversions = 0;
-	  for (var i = 0; i < array.length; i++) {
-	    var num = array[i];
-	    var inversions = 0;
-
-	    if (num != 0) {
-	      for (var j = i + 1; j < array.length; j++) {
-	        if (num > array[j] && array[j] != 0) {
-	          inversions += 1;
-	        }
-	      }
-	    }
-	    totalInversions = totalInversions + inversions;
-	  }
-	  return totalInversions;
-	}
-
-	// Returns row number of blank space (starting with 1)
-	function rowWithBlankFromBottom(matrix) {
-	  var lastRow = matrix.length;
-	  for (var i = lastRow - 1; i >= 0; i--) {
-	    // look for 0 in this row
-	    for (var j = 0; j < matrix[i].length; j++) {
-	      if (matrix[i][j] == 0) {
-	        return matrix.length - i;
-	      }
-	    }
-	  }
-	}
-
-	// Takes game state and returns if board is solved
-	function isSolved(state) {
-	  var board = state.board;
-	  var n = state.n;
-	  var m = state.m;
-
-	  var id = 0;
-	  for (var i = 0; i < n; i++) {
-	    for (var j = 0; j < m; j++) {
-	      if (board.board[i][j] !== id) {
-	        return false;
-	      }
-	      id += 1;
-	    }
-	  }
-	  return true;
-	}
-
-	// returns {
-	//  coords,
-	//  relative // neighbor relative location
-	// }
-	function blankNeighbors(board) {
-	  var blankLoc = board.blankLoc;
-	  var neighbors = [];
-	  var maxY = board.board.length - 1;
-	  var maxX = board.board[0].length - 1; // assume all rows are equal
-
-	  if (blankLoc.x > 0) {
-	    // left is available
-	    neighbors.push({
-	      coords: {
-	        x: blankLoc.x - 1,
-	        y: blankLoc.y
-	      },
-	      relative: "LEFT"
-	    });
-	  }
-
-	  if (blankLoc.x < maxX) {
-	    // right is available
-	    neighbors.push({
-	      coords: {
-	        x: blankLoc.x + 1,
-	        y: blankLoc.y
-	      },
-	      relative: "RIGHT"
-	    });
-	  }
-
-	  if (blankLoc.y > 0) {
-	    // up is available
-	    neighbors.push({
-	      coords: {
-	        x: blankLoc.x,
-	        y: blankLoc.y - 1
-	      },
-	      relative: "UP"
-	    });
-	  }
-
-	  if (blankLoc.y < maxY) {
-	    // down is available
-	    neighbors.push({
-	      coords: {
-	        x: blankLoc.x,
-	        y: blankLoc.y + 1
-	      },
-	      relative: "DOWN"
-	    });
-	  }
-	  return neighbors;
-	}
-
-	function createBoardV2(n, m) {
-	  // create matrix
-	  var matrix = [];
-	  var id = 0;
-	  for (var i = 0; i < n; i++) {
-	    matrix[i] = [];
-	    for (var j = 0; j < m; j++) {
-	      matrix[i][j] = id;
-	      id += 1;
-	    }
-	  }
-
-	  return {
-	    board: matrix,
-	    blankLoc: {
-	      x: 0,
-	      y: 0
-	    },
-	    history: [],
-	    moves: 0,
-	    latestMove: function latestMove() {
-	      if (!_.isEmpty(this.history)) {
-	        return this.history[this.history.length - 1];
-	      } else {
-	        return null;
-	      }
-	    }
-	  };
-	}
-
-	function translateCoords(initCoords, direction) {
-	  if (direction === "UP") {
-	    return {
-	      x: initCoords.x,
-	      y: initCoords.y - 1
-	    };
-	  } else if (direction === "DOWN") {
-	    return {
-	      x: initCoords.x,
-	      y: initCoords.y + 1
-	    };
-	  } else if (direction === "LEFT") {
-	    return {
-	      x: initCoords.x - 1,
-	      y: initCoords.y
-	    };
-	  } else if (direction === "RIGHT") {
-	    return {
-	      x: initCoords.x + 1,
-	      y: initCoords.y
-	    };
-	  } else {
-	    throw "Unkown slide direction: " + direction;
-	  }
-	}
-
-	function isBlankSpace(board, coords) {
-	  return board.board[coords.y][coords.x] === 0;
-	}
-
-	// if shuffle is true, apply slide to shuffle history
-	function applySlide(board, slide) {
-	  var opts = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
-
-	  var fromCoords = slide.coords;
-	  var toCoords = translateCoords(fromCoords, slide.dir);
-
-	  if (!isBlankSpace(board, toCoords)) {
-	    throw "Trying to move piece to non blank piece!";
-	  }
-
-	  // Mutate board
-	  board.board[toCoords.y][toCoords.x] = slide.tileId;
-	  board.board[fromCoords.y][fromCoords.x] = 0;
-
-	  board.blankLoc = {
-	    x: fromCoords.x,
-	    y: fromCoords.y
-	  };
-
-	  if (opts.addToHistory && opts.addToHistory === true) {
-	    board.history.push(slide);
-	  }
-
-	  if (opts.incMoves && opts.incMoves === true) {
-	    board.moves = board.moves + 1;
-	  }
-
-	  return board;
-	}
-
-	function inverseDirection(dir) {
-	  if (dir === "UP") {
-	    return "DOWN";
-	  } else if (dir === "DOWN") {
-	    return "UP";
-	  } else if (dir === "LEFT") {
-	    return "RIGHT";
-	  } else if (dir === "RIGHT") {
-	    return "LEFT";
-	  } else {
-	    throw "UNKNOWN DIRECTION: " + dir;
-	  }
-	}
-
-	function getTileId(board, coords) {
-	  // board is [][] matrix
-	  return board.board[coords.y][coords.x];
-	}
-
-	// Shuffles input board, and returns object containing history of shuffles and shuffled board
-	function shuffleBoard(board, maxShuffles) {
-	  var _loop = function _loop(currentShuffle) {
-	    // find neighbors of blank space
-	    var neighbors = blankNeighbors(board);
-	    var latestMove = board.latestMove();
-
-	    if (latestMove !== null) {
-	      // filter out negating moves (i.e. where latestmove->dir === neighbor->relativeposition
-	      neighbors = _.filter(neighbors, function (n) {
-	        return n.relative !== latestMove.dir;
-	      });
-	    }
-
-	    var neighborToMove = _.sample(neighbors);
-	    console.log("moving ", neighborToMove);
-	    var dir = inverseDirection(neighborToMove.relative); // reverse relative direction to get movement direction
-	    var neighborCoords = neighborToMove.coords;
-	    var slide = {
-	      tileId: getTileId(board, neighborCoords),
-	      coords: neighborCoords,
-	      dir: dir
-	    };
-
-	    board = applySlide(board, slide, {
-	      addToHistory: true,
-	      incMoves: false
-	    });
-	  };
-
-	  for (var currentShuffle = 0; currentShuffle < maxShuffles; currentShuffle++) {
-	    _loop(currentShuffle);
-	  }
-
-	  return board;
-	}
-
-/***/ },
-/* 4 */,
-/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -22409,6 +22137,278 @@
 
 	}));
 
+
+/***/ },
+/* 4 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.countInversions = countInversions;
+	exports.rowWithBlankFromBottom = rowWithBlankFromBottom;
+	exports.isSolved = isSolved;
+	exports.blankNeighbors = blankNeighbors;
+	exports.createBoardV2 = createBoardV2;
+	exports.translateCoords = translateCoords;
+	exports.isBlankSpace = isBlankSpace;
+	exports.applySlide = applySlide;
+	exports.inverseDirection = inverseDirection;
+	exports.getTileId = getTileId;
+	exports.shuffleBoard = shuffleBoard;
+	function countInversions(array) {
+	  var totalInversions = 0;
+	  for (var i = 0; i < array.length; i++) {
+	    var num = array[i];
+	    var inversions = 0;
+
+	    if (num != 0) {
+	      for (var j = i + 1; j < array.length; j++) {
+	        if (num > array[j] && array[j] != 0) {
+	          inversions += 1;
+	        }
+	      }
+	    }
+	    totalInversions = totalInversions + inversions;
+	  }
+	  return totalInversions;
+	}
+
+	// Returns row number of blank space (starting with 1)
+	function rowWithBlankFromBottom(matrix) {
+	  var lastRow = matrix.length;
+	  for (var i = lastRow - 1; i >= 0; i--) {
+	    // look for 0 in this row
+	    for (var j = 0; j < matrix[i].length; j++) {
+	      if (matrix[i][j] == 0) {
+	        return matrix.length - i;
+	      }
+	    }
+	  }
+	}
+
+	// Takes game state and returns if board is solved
+	function isSolved(state) {
+	  var board = state.board;
+	  var n = state.n;
+	  var m = state.m;
+
+	  var id = 0;
+	  for (var i = 0; i < n; i++) {
+	    for (var j = 0; j < m; j++) {
+	      if (board.board[i][j] !== id) {
+	        return false;
+	      }
+	      id += 1;
+	    }
+	  }
+	  return true;
+	}
+
+	// returns {
+	//  coords,
+	//  relative // neighbor relative location
+	// }
+	function blankNeighbors(board) {
+	  var blankLoc = board.blankLoc;
+	  var neighbors = [];
+	  var maxY = board.board.length - 1;
+	  var maxX = board.board[0].length - 1; // assume all rows are equal
+
+	  if (blankLoc.x > 0) {
+	    // left is available
+	    neighbors.push({
+	      coords: {
+	        x: blankLoc.x - 1,
+	        y: blankLoc.y
+	      },
+	      relative: "LEFT"
+	    });
+	  }
+
+	  if (blankLoc.x < maxX) {
+	    // right is available
+	    neighbors.push({
+	      coords: {
+	        x: blankLoc.x + 1,
+	        y: blankLoc.y
+	      },
+	      relative: "RIGHT"
+	    });
+	  }
+
+	  if (blankLoc.y > 0) {
+	    // up is available
+	    neighbors.push({
+	      coords: {
+	        x: blankLoc.x,
+	        y: blankLoc.y - 1
+	      },
+	      relative: "UP"
+	    });
+	  }
+
+	  if (blankLoc.y < maxY) {
+	    // down is available
+	    neighbors.push({
+	      coords: {
+	        x: blankLoc.x,
+	        y: blankLoc.y + 1
+	      },
+	      relative: "DOWN"
+	    });
+	  }
+	  return neighbors;
+	}
+
+	function createBoardV2(n, m) {
+	  // create matrix
+	  var matrix = [];
+	  var id = 0;
+	  for (var i = 0; i < n; i++) {
+	    matrix[i] = [];
+	    for (var j = 0; j < m; j++) {
+	      matrix[i][j] = id;
+	      id += 1;
+	    }
+	  }
+
+	  return {
+	    board: matrix,
+	    blankLoc: {
+	      x: 0,
+	      y: 0
+	    },
+	    history: [],
+	    moves: 0,
+	    latestMove: function latestMove() {
+	      if (!_.isEmpty(this.history)) {
+	        return this.history[this.history.length - 1];
+	      } else {
+	        return null;
+	      }
+	    }
+	  };
+	}
+
+	function translateCoords(initCoords, direction) {
+	  if (direction === "UP") {
+	    return {
+	      x: initCoords.x,
+	      y: initCoords.y - 1
+	    };
+	  } else if (direction === "DOWN") {
+	    return {
+	      x: initCoords.x,
+	      y: initCoords.y + 1
+	    };
+	  } else if (direction === "LEFT") {
+	    return {
+	      x: initCoords.x - 1,
+	      y: initCoords.y
+	    };
+	  } else if (direction === "RIGHT") {
+	    return {
+	      x: initCoords.x + 1,
+	      y: initCoords.y
+	    };
+	  } else {
+	    throw "Unkown slide direction: " + direction;
+	  }
+	}
+
+	function isBlankSpace(board, coords) {
+	  return board.board[coords.y][coords.x] === 0;
+	}
+
+	// if shuffle is true, apply slide to shuffle history
+	function applySlide(board, slide) {
+	  var opts = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+
+	  var fromCoords = slide.coords;
+	  var toCoords = translateCoords(fromCoords, slide.dir);
+
+	  if (!isBlankSpace(board, toCoords)) {
+	    throw "Trying to move piece to non blank piece!";
+	  }
+
+	  // Mutate board
+	  board.board[toCoords.y][toCoords.x] = slide.tileId;
+	  board.board[fromCoords.y][fromCoords.x] = 0;
+
+	  board.blankLoc = {
+	    x: fromCoords.x,
+	    y: fromCoords.y
+	  };
+
+	  if (opts.addToHistory && opts.addToHistory === true) {
+	    board.history.push(slide);
+	  }
+
+	  if (opts.incMoves && opts.incMoves === true) {
+	    board.moves = board.moves + 1;
+	  }
+
+	  return board;
+	}
+
+	function inverseDirection(dir) {
+	  if (dir === "UP") {
+	    return "DOWN";
+	  } else if (dir === "DOWN") {
+	    return "UP";
+	  } else if (dir === "LEFT") {
+	    return "RIGHT";
+	  } else if (dir === "RIGHT") {
+	    return "LEFT";
+	  } else {
+	    throw "UNKNOWN DIRECTION: " + dir;
+	  }
+	}
+
+	function getTileId(board, coords) {
+	  // board is [][] matrix
+	  return board.board[coords.y][coords.x];
+	}
+
+	// Shuffles input board, and returns object containing history of shuffles and shuffled board
+	function shuffleBoard(board, maxShuffles) {
+	  var _loop = function _loop(currentShuffle) {
+	    // find neighbors of blank space
+	    var neighbors = blankNeighbors(board);
+	    var latestMove = board.latestMove();
+
+	    if (latestMove !== null) {
+	      // filter out negating moves (i.e. where latestmove->dir === neighbor->relativeposition
+	      neighbors = _.filter(neighbors, function (n) {
+	        return n.relative !== latestMove.dir;
+	      });
+	    }
+
+	    var neighborToMove = _.sample(neighbors);
+	    console.log("moving ", neighborToMove);
+	    var dir = inverseDirection(neighborToMove.relative); // reverse relative direction to get movement direction
+	    var neighborCoords = neighborToMove.coords;
+	    var slide = {
+	      tileId: getTileId(board, neighborCoords),
+	      coords: neighborCoords,
+	      dir: dir
+	    };
+
+	    board = applySlide(board, slide, {
+	      addToHistory: true,
+	      incMoves: false
+	    });
+	  };
+
+	  for (var currentShuffle = 0; currentShuffle < maxShuffles; currentShuffle++) {
+	    _loop(currentShuffle);
+	  }
+
+	  return board;
+	}
 
 /***/ }
 /******/ ]);

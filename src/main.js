@@ -450,6 +450,7 @@ function main() {
     }
 
     state.img.onload = (e) => {
+      $("#puzzle-container").removeAttr("hidden");
       $("#loading").empty();
       const image = e.target;
 
