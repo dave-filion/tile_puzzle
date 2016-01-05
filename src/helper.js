@@ -62,7 +62,7 @@ export function blankNeighbors(board) {
         y: blankLoc.y
       },
       relative: "LEFT"
-    })
+    });
   }
 
   if (blankLoc.x < maxX) {
@@ -73,7 +73,7 @@ export function blankNeighbors(board) {
         y: blankLoc.y
       },
       relative: "RIGHT"
-    })
+    });
   }
 
   if (blankLoc.y > 0) {
@@ -84,7 +84,7 @@ export function blankNeighbors(board) {
         y: blankLoc.y - 1
       },
       relative: "UP"
-    })
+    });
   }
 
   if (blankLoc.y < maxY) {
@@ -95,7 +95,7 @@ export function blankNeighbors(board) {
         y: blankLoc.y + 1
       },
       relative: "DOWN"
-    })
+    });
   }
   return neighbors;
 }
@@ -127,7 +127,7 @@ export function createBoardV2(n, m) {
         return null;
       }
     }
-  }
+  };
 }
 
 export function translateCoords(initCoords, direction) {
@@ -176,7 +176,7 @@ export function applySlide(board, slide, opts = {}) {
   board.blankLoc = {
     x: fromCoords.x,
     y: fromCoords.y
-  }
+  };
 
   if (opts.addToHistory && opts.addToHistory === true) {
     board.history.push(slide);

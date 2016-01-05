@@ -327,9 +327,10 @@ function draw() {
 
 // Updates high score DOM element
 function renderTopScores(highScores) {
-  // progmatically generate table. Not ideal, a view library such as React
+  // progmatically generate table. Not ideal, a view library with templating such as React
   // would be preferable here.
-  document.getElementById("highScoreContainer").innerHTML = "";
+  $("#highScoreContainer").empty();
+
   const tbl = document.createElement('table');
   tbl.className = 'pure-table pure-table-bordered';
 
@@ -347,7 +348,8 @@ function renderTopScores(highScores) {
     body.appendChild(tr);
   });
   tbl.appendChild(body);
-  document.getElementById('highScoreContainer').appendChild(tbl);
+
+  $("#highScoreContainer").html(tbl);
 }
 
 function postScore(userId, score) {
@@ -368,7 +370,7 @@ function postScore(userId, score) {
 }
 
 function renderCurrentScore(currentScore) {
-  document.getElementById("moveCounter").innerHTML = currentScore;
+  $("#moveCounter").html(currentScore);
 }
 
 function renderBoard(state) {
