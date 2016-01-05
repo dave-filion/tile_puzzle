@@ -1,9 +1,7 @@
 import _ from 'lodash';
+import $ from 'jquery';
 import {
-  countInversions,
-  rowWithBlankFromBottom,
   isSolved,
-  blankNeighbors,
   createBoardV2,
   inverseDirection,
   applySlide,
@@ -11,14 +9,10 @@ import {
   translateCoords
 } from './helper';
 
-import {
-  test
-} from './test';
-
 const DEFAULT_IMG = "http://www.capture-the-moment.co.uk/tp/images/382.jpg";
 const DEFAULT_N = 3; // ROWS
 const DEFAULT_M = 3; // COLS
-const MAX_SHUFFLES = 100;
+
 const initialAnimationState = {
   active: false,
   move: null
@@ -30,7 +24,7 @@ const initialHintState = {
   active: false
 };
 
-const canvas = document.getElementById("canvas");
+let canvas;
 
 // Global state object
 let state = {
@@ -42,23 +36,25 @@ let state = {
   n: null,
   m: null,
   tileHeight: null,
-  tileWidth: null,
+  tileWidth: null
 };
 
+// Calculates start x value for image slice based on tileId
 function calcSX(tileId, m, tileWidth) {
   return (tileId % m) * tileWidth;
 }
 
+// Calculates start y value for image slice based on tileId
 function calcSY(tileId, m, tileHeight) {
   return Math.floor(tileId / m) * tileHeight;
 }
 
+// Renders a tile to the canvas context
 function renderTile(tileId, x, y, state) {
   const {
     tileWidth,
     tileHeight,
     img,
-    n,
     m
   } = state;
 
@@ -78,6 +74,7 @@ function renderTile(tileId, x, y, state) {
   }
 }
 
+// Initializes and starts playing a slide animation
 function startSlideAnimation(slide, state) {
   const {
     tileWidth,
@@ -102,22 +99,22 @@ function startSlideAnimation(slide, state) {
     state.animation.finalCoords = {
       x: startX,
       y: (slide.coords.y - 1) * tileHeight
-    }
+    };
   } else if (slide.dir === "DOWN") {
     state.animation.finalCoords = {
       x: startX,
       y: (slide.coords.y + 1) * tileHeight
-    }
+    };
   } else if (slide.dir === "LEFT") {
     state.animation.finalCoords = {
       x: (slide.coords.x - 1) * tileWidth,
       y: startY
-    }
+    };
   } else if (slide.dir === "RIGHT") {
     state.animation.finalCoords = {
       x: (slide.coords.x + 1) * tileWidth,
       y: startY
-    }
+    };
   }
 
   window.requestAnimationFrame(draw);
@@ -172,7 +169,7 @@ function boardClickCallback(e, state) {
       tileId: tile,
       coords: {x, y},
       dir: dir
-    }
+    };
 
     // Update board
     state.board = applySlide(board, slide, {
@@ -184,14 +181,7 @@ function boardClickCallback(e, state) {
   }
 }
 
-function stopAnimation(state) {
-  console.log("stopping animation");
-  state.animation = {
-    active: false
-  };
-  window.requestAnimationFrame(draw);
-}
-
+// draws individual frames during animation mode
 function animateMove(state) {
   const {
     animation,
@@ -199,7 +189,6 @@ function animateMove(state) {
     tileWidth,
     ctx,
     img,
-    n,
     m
   } = state;
 
@@ -244,12 +233,13 @@ function animateMove(state) {
 
   ctx.drawImage(img, sliceX, sliceY, tileWidth, tileHeight, newX, newY, tileWidth, tileHeight);
 
-  // Update latest coordinates
   if (finished == true) {
+    // Disable animation mode
     state.animation = {
       active: false
-    }
+    };
   } else {
+    // Update latest coordinates
     state.animation.latestCoords = {
       x: newX,
       y: newY
@@ -309,16 +299,17 @@ function draw() {
     } else {
       // Done solving
       state.solving.active = false;
-      canvas.onclick = (e) => {};
-      document.getElementById("solveButton").onclick = (e) => {
-        e.preventDefault();
-      };
+
+      // unbind canvas click
+      canvas.onclick = () => {};
+      $(canvas).unbind("click");
+      $("#solveButton").unbind("click");
     }
 
   } else {
     if (isSolved(state)) {
       // Unbind action handler
-      canvas.onclick = (e) => {};
+      $(canvas).unbind("click");
 
       renderSuccess(true);
 
@@ -428,7 +419,9 @@ function main() {
     .then(json => renderTopScores(json)));
 
   // bind generate button
-  document.getElementById("generateButton").onclick = (e) => {
+  $("#generateButton").click((e) => {
+    $("#loading").html("Fetching image!");
+
     e.preventDefault();
     const userN = document.getElementById("nInput").value;
     const userM = document.getElementById("mInput").value;
@@ -457,26 +450,20 @@ function main() {
     }
 
     state.img.onload = (e) => {
-      // set up arrow key controls
-      document.addEventListener("keydown", (e) => {
-        const keyCode = e.keyCode;
-        console.log(keyCode);
-        if (keyCode === 37) {
-          // LEFT
-
-        }
-      }, false);
-
+      $("#loading").empty();
       const image = e.target;
 
       let imageHeight = image.height;
       let imageWidth = image.width;
+
+      canvas = document.getElementById("canvas");
       canvas.width = imageWidth;
       canvas.height = imageHeight;
       state.tileHeight = imageHeight / n;
       state.tileWidth = imageWidth / m;
       state.n = n;
       state.m = m;
+
       state.ctx = canvas.getContext("2d");
 
       let board = createBoardV2(state.n, state.m);
@@ -488,24 +475,23 @@ function main() {
       state.board = shuffleBoard(board, state.n * 10);
 
       // bind solve button
-      document.getElementById("solveButton").onclick = (e) => {
+      $("#solveButton").click((e) => {
         e.preventDefault();
         solve(state);
-      };
+      });
 
       // bind hint button
-      document.getElementById("hintButton").onclick = (e) => {
+      $("#hintButton").click((e) => {
         e.preventDefault();
         hint(state);
-      }
+      });
 
       // begin drawing
       window.requestAnimationFrame(draw);
-    }
-  }
+    };
+  });
 }
 
-// non jquery document on ready (does not work in IE8)
-document.addEventListener("DOMContentLoaded", function(event) {
+$(() => {
   main();
 });
