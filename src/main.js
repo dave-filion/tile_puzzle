@@ -12,6 +12,7 @@ import {
 const DEFAULT_IMG = "http://www.capture-the-moment.co.uk/tp/images/382.jpg";
 const DEFAULT_N = 3; // ROWS
 const DEFAULT_M = 3; // COLS
+const DEFAULT_USER_ID = "user1";
 
 const initialAnimationState = {
   active: false,
@@ -314,9 +315,9 @@ function draw() {
       renderSuccess(true);
 
       // post high score to backend
-      postScore("dave", state.board.moves)
+      postScore(DEFAULT_USER_ID, state.board.moves)
       .then(response => response.json()
-        .then(json => renderTopScores(json)));
+        .then(json => renderTopScore(json)));
     } else {
       renderGame(state);
       renderSuccess(false);
@@ -325,31 +326,10 @@ function draw() {
   }
 }
 
-// Updates high score DOM element
-function renderTopScores(highScores) {
-  // progmatically generate table. Not ideal, a view library with templating such as React
-  // would be preferable here.
-  $("#highScoreContainer").empty();
-
-  const tbl = document.createElement('table');
-  tbl.className = 'pure-table pure-table-bordered';
-
-  const body = document.createElement('tbody');
-  _.each(highScores, (scoreObj) => {
-    const score = scoreObj.score;
-    const userId = scoreObj.userId;
-    const tr = document.createElement('tr');
-    const userIdTd = document.createElement('td');
-    userIdTd.appendChild(document.createTextNode(userId));
-    const scoreTd = document.createElement('td');
-    scoreTd.appendChild(document.createTextNode(score));
-    tr.appendChild(userIdTd);
-    tr.appendChild(scoreTd);
-    body.appendChild(tr);
-  });
-  tbl.appendChild(body);
-
-  $("#highScoreContainer").html(tbl);
+// Updates high score DOM element. highScore param is object with
+// userId and score attributes
+function renderTopScore(highScore) {
+  $("#highScoreContainer").html(highScore.score);
 }
 
 function postScore(userId, score) {
@@ -415,10 +395,11 @@ function hint(state) {
 function main() {
   console.log("Tile puzzle loaded!");
 
+  // User Id is hardcoded now, since there is no login system.
   // fetch high scores
-  fetch("/api/highScore")
+  fetch("/api/highScore/" + DEFAULT_USER_ID)
   .then(response => response.json()
-    .then(json => renderTopScores(json)));
+    .then(json => renderTopScore(json)));
 
   // bind generate button
   $("#generateButton").click((e) => {

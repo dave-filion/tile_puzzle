@@ -61,6 +61,7 @@
 	var DEFAULT_IMG = "http://www.capture-the-moment.co.uk/tp/images/382.jpg";
 	var DEFAULT_N = 3; // ROWS
 	var DEFAULT_M = 3; // COLS
+	var DEFAULT_USER_ID = "user1";
 
 	var initialAnimationState = {
 	  active: false,
@@ -356,9 +357,9 @@
 	      renderSuccess(true);
 
 	      // post high score to backend
-	      postScore("dave", state.board.moves).then(function (response) {
+	      postScore(DEFAULT_USER_ID, state.board.moves).then(function (response) {
 	        return response.json().then(function (json) {
-	          return renderTopScores(json);
+	          return renderTopScore(json);
 	        });
 	      });
 	    } else {
@@ -371,31 +372,10 @@
 	  }
 	}
 
-	// Updates high score DOM element
-	function renderTopScores(highScores) {
-	  // progmatically generate table. Not ideal, a view library with templating such as React
-	  // would be preferable here.
-	  (0, _jquery2.default)("#highScoreContainer").empty();
-
-	  var tbl = document.createElement('table');
-	  tbl.className = 'pure-table pure-table-bordered';
-
-	  var body = document.createElement('tbody');
-	  _lodash2.default.each(highScores, function (scoreObj) {
-	    var score = scoreObj.score;
-	    var userId = scoreObj.userId;
-	    var tr = document.createElement('tr');
-	    var userIdTd = document.createElement('td');
-	    userIdTd.appendChild(document.createTextNode(userId));
-	    var scoreTd = document.createElement('td');
-	    scoreTd.appendChild(document.createTextNode(score));
-	    tr.appendChild(userIdTd);
-	    tr.appendChild(scoreTd);
-	    body.appendChild(tr);
-	  });
-	  tbl.appendChild(body);
-
-	  (0, _jquery2.default)("#highScoreContainer").html(tbl);
+	// Updates high score DOM element. highScore param is object with
+	// userId and score attributes
+	function renderTopScore(highScore) {
+	  (0, _jquery2.default)("#highScoreContainer").html(highScore.score);
 	}
 
 	function postScore(userId, score) {
@@ -464,10 +444,11 @@
 	function main() {
 	  console.log("Tile puzzle loaded!");
 
+	  // User Id is hardcoded now, since there is no login system.
 	  // fetch high scores
-	  fetch("/api/highScore").then(function (response) {
+	  fetch("/api/highScore/" + DEFAULT_USER_ID).then(function (response) {
 	    return response.json().then(function (json) {
-	      return renderTopScores(json);
+	      return renderTopScore(json);
 	    });
 	  });
 
