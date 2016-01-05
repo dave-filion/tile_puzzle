@@ -326,30 +326,8 @@ function draw() {
 }
 
 // Updates high score DOM element
-function renderTopScores(highScores) {
-  // progmatically generate table. Not ideal, a view library with templating such as React
-  // would be preferable here.
-  $("#highScoreContainer").empty();
-
-  const tbl = document.createElement('table');
-  tbl.className = 'pure-table pure-table-bordered';
-
-  const body = document.createElement('tbody');
-  _.each(highScores, (scoreObj) => {
-    const score = scoreObj.score;
-    const userId = scoreObj.userId;
-    const tr = document.createElement('tr');
-    const userIdTd = document.createElement('td');
-    userIdTd.appendChild(document.createTextNode(userId));
-    const scoreTd = document.createElement('td');
-    scoreTd.appendChild(document.createTextNode(score));
-    tr.appendChild(userIdTd);
-    tr.appendChild(scoreTd);
-    body.appendChild(tr);
-  });
-  tbl.appendChild(body);
-
-  $("#highScoreContainer").html(tbl);
+function renderTopScores(highScore) {
+  $("#highScoreContainer").html(highScore);
 }
 
 function postScore(userId, score) {

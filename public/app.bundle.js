@@ -372,30 +372,8 @@
 	}
 
 	// Updates high score DOM element
-	function renderTopScores(highScores) {
-	  // progmatically generate table. Not ideal, a view library with templating such as React
-	  // would be preferable here.
-	  (0, _jquery2.default)("#highScoreContainer").empty();
-
-	  var tbl = document.createElement('table');
-	  tbl.className = 'pure-table pure-table-bordered';
-
-	  var body = document.createElement('tbody');
-	  _lodash2.default.each(highScores, function (scoreObj) {
-	    var score = scoreObj.score;
-	    var userId = scoreObj.userId;
-	    var tr = document.createElement('tr');
-	    var userIdTd = document.createElement('td');
-	    userIdTd.appendChild(document.createTextNode(userId));
-	    var scoreTd = document.createElement('td');
-	    scoreTd.appendChild(document.createTextNode(score));
-	    tr.appendChild(userIdTd);
-	    tr.appendChild(scoreTd);
-	    body.appendChild(tr);
-	  });
-	  tbl.appendChild(body);
-
-	  (0, _jquery2.default)("#highScoreContainer").html(tbl);
+	function renderTopScores(highScore) {
+	  (0, _jquery2.default)("#highScoreContainer").html(highScore);
 	}
 
 	function postScore(userId, score) {

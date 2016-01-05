@@ -1,31 +1,38 @@
 var express = require("express");
 var bodyParser = require('body-parser');
-var _ = require("lodash");
-
+var session = require("express-session");
 console.log("Starting Tile Puzzle!");
 
 var app = express();
 app.use(express.static('public'));
 app.use(bodyParser.json()); // json request parsing middleware
+app.use(session({
+  resave: true,
+  name: "tile-puzzle.sid",
+  saveUnitialized: false,
+  secret: "tile-puzzle secret" // the secret should not be here, but that's ok for right now
+}));
 
 // high score data structure just kept in memory.
 // Ideally this would be persisted in a datastore
-var highScores = [
-  {userId: 'dave', score: 12},
-  {userId: 'ste221', score: 15},
-  {userId: 'owkd', score: 99}
-];
+var scores = {};
 
-function updateHighScore(userId, score) {
-  highScores.push({
-    userId: userId,
-    score: score
-  });
-  return highScores;
+function updateHighScore(id, score) {
+  console.log("id: ", id);
+  var previousScore = scores[id];
+  console.log("previous score: ", previousScore);
+  if (!previousScore) {
+    scores[id] = score;
+  } else {
+    if (score < previousScore) {
+      console.log("updating high score for user id ", id, " to score: ", score);
+      scores[id] = score;
+    }
+  }
 }
 
-function sortByScore(highScores) {
-  return _.sortBy(highScores, 'score');
+function getHighScore(id) {
+  return scores[id];
 }
 
 app.get("/", function(req, res) {
@@ -33,17 +40,18 @@ app.get("/", function(req, res) {
 });
 
 app.get("/api/highScore", function(req, res) {
-  res.json(_.take(sortByScore(highScores), 5));
+  res.json(getHighScore(req.sessionID));
 });
 
 app.post("/api/highScore", function(req, res) {
   var body = req.body;
-  var updatedScores = updateHighScore(body.userId, body.score);
-  res.json(_.take(sortByScore(updatedScores), 5));
+  // use session id to identify users
+  var sessionID = req.sessionID;
+  updateHighScore(sessionID, body.score);
+  res.json(getHighScore(sessionID));
 });
 
 var server = app.listen(3000, function() {
   var port = server.address().port;
-
   console.log("Tile Puzzle server started, listening on %s", port);
-})
+});
