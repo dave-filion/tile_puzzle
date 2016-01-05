@@ -11,6 +11,8 @@
   "dependencies": {
     "body-parser": "^1.14.2",
     "express": "^4.13.3",
+    "express-session": "^1.12.1",
+    "gen-uuid": "0.0.1",
     "jquery": "^2.1.4",
     "lodash": "^3.10.1",
     "whatwg-fetch": "^0.10.1"
