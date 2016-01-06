@@ -22,6 +22,7 @@ function updateHighScore(userId, score) {
     }
   } else {
     console.log("Init score for user id", userId);
+    scores[userId] = score;
   }
 }
 
