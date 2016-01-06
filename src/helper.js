@@ -100,7 +100,7 @@ export function blankNeighbors(board) {
   return neighbors;
 }
 
-export function createBoardV2(n, m) {
+export function createBoard(n, m) {
   // create matrix
   const matrix = [];
   let id = 0;

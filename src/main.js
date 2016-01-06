@@ -2,7 +2,7 @@ import _ from 'lodash';
 import $ from 'jquery';
 import {
   isSolved,
-  createBoardV2,
+  createBoard,
   inverseDirection,
   applySlide,
   shuffleBoard,
@@ -450,7 +450,7 @@ function main() {
 
       state.ctx = canvas.getContext("2d");
 
-      let board = createBoardV2(state.n, state.m);
+      let board = createBoard(state.n, state.m);
 
       // number of shuffles determined by n. This assumes n and
       // m are close (as is the default). More sophisticated logic

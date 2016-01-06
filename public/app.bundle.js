@@ -501,7 +501,7 @@
 
 	      state.ctx = canvas.getContext("2d");
 
-	      var board = (0, _helper.createBoardV2)(state.n, state.m);
+	      var board = (0, _helper.createBoard)(state.n, state.m);
 
 	      // number of shuffles determined by n. This assumes n and
 	      // m are close (as is the default). More sophisticated logic
@@ -22134,7 +22134,7 @@
 	exports.rowWithBlankFromBottom = rowWithBlankFromBottom;
 	exports.isSolved = isSolved;
 	exports.blankNeighbors = blankNeighbors;
-	exports.createBoardV2 = createBoardV2;
+	exports.createBoard = createBoard;
 	exports.translateCoords = translateCoords;
 	exports.isBlankSpace = isBlankSpace;
 	exports.applySlide = applySlide;
@@ -22246,7 +22246,7 @@
 	  return neighbors;
 	}
 
-	function createBoardV2(n, m) {
+	function createBoard(n, m) {
 	  // create matrix
 	  var matrix = [];
 	  var id = 0;
